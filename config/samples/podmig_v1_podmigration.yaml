@@ -1,0 +1,7 @@
+apiVersion: podmig.dcn.ssu.ac.kr/v1
+kind: Podmigration
+metadata:
+  name: podmigration-sample
+spec:
+  # Add fields here
+  foo: bar

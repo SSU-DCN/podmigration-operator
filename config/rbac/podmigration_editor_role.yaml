@@ -1,0 +1,24 @@
+# permissions for end users to edit podmigrations.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: podmigration-editor-role
+rules:
+- apiGroups:
+  - podmig.dcn.ssu.ac.kr
+  resources:
+  - podmigrations
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - podmig.dcn.ssu.ac.kr
+  resources:
+  - podmigrations/status
+  verbs:
+  - get

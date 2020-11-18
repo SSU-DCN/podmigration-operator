@@ -1,0 +1,20 @@
+# permissions for end users to view podmigrations.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: podmigration-viewer-role
+rules:
+- apiGroups:
+  - podmig.dcn.ssu.ac.kr
+  resources:
+  - podmigrations
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - podmig.dcn.ssu.ac.kr
+  resources:
+  - podmigrations/status
+  verbs:
+  - get

@@ -1,3 +1,7 @@
 domain: dcn.ssu.ac.kr
 repo: github.com/SSU-DCN/podmigration-operator
+resources:
+- group: podmig
+  kind: Podmigration
+  version: v1
 version: "2"
