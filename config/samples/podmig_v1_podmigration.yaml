@@ -1,7 +1,29 @@
+# apiVersion: podmig.dcn.ssu.ac.kr/v1
+# kind: Podmigration
+# metadata:
+#   name: podmigration-sample
+# spec:
+#   # Add fields here
+#   foo: bar
 apiVersion: podmig.dcn.ssu.ac.kr/v1
 kind: Podmigration
 metadata:
-  name: podmigration-sample
+  name: test
+  labels:
+    name: test
 spec:
-  # Add fields here
-  foo: bar
+  template:
+    spec:
+      metadata:
+        labels:
+          app: redis
+      containers:
+      - name: redis
+        image: redis
+        ports:
+          - containerPort: 6379
+            protocol: tcp
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"

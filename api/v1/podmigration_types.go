@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,17 +26,28 @@ import (
 
 // PodmigrationSpec defines the desired state of Podmigration
 type PodmigrationSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Template describes the pods that will be created.
+	// +kubebuilder:validation:Required
+	Template corev1.PodTemplateSpec `json:"template"`
 
-	// Foo is an example field of Podmigration. Edit Podmigration_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// ExcludeNode indicates a node that the Pod should not get scheduled on or get migrated
+	// away from.
+	// +kubebuilder:validation:Optional
+	// ExcludeNodeSelector map[string]string `json:"excludeNodeSelector"`
 }
 
 // PodmigrationStatus defines the observed state of Podmigration
 type PodmigrationStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	// State indicates the state of the MigratingPod
+	State string `json:"state"`
+
+	// CurrentRevision indicates the version of the MigratingPod to generate the current Pod
+	CurrentRevision string `json:"currentRevision"`
+
+	// ActivePod
+	ActivePod string `json:"activePod"`
 }
 
 // +kubebuilder:object:root=true
