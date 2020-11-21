@@ -25,6 +25,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	podmigv1 "github.com/SSU-DCN/podmigration-operator/api/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // PodmigrationReconciler reconciles a Podmigration object
@@ -38,15 +40,47 @@ type PodmigrationReconciler struct {
 // +kubebuilder:rbac:groups=podmig.dcn.ssu.ac.kr,resources=podmigrations/status,verbs=get;update;patch
 
 func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
-	_ = r.Log.WithValues("podmigration", req.NamespacedName)
+	ctx := context.Background()
+	log := r.Log.WithValues("podmigration", req.NamespacedName)
 
 	// your logic here
+	// Load the podMigration resource object, if there is no Object, return directly
+	var migratingPod podmigv1.Podmigration
+	if err := r.Get(ctx, req.NamespacedName, &migratingPod); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+	log.Info("", "print test", tuongPod.Spec)
+
+	// Then list all pods controlled by the Tuong resource object
+	var childPods corev1.PodList
+	if err := r.List(ctx, &childPods, client.InNamespace(req.Namespace), client.MatchingField(podOwnerKey, req.Name)); err != nil {
+		log.Error(err, "unable to list child pods")
+		return ctrl.Result{}, err
+	}
+
+	// First test log the number of pods
+	size := len(childPods.Items)
+	log.Info("", "template test", size)
 
 	return ctrl.Result{}, nil
 }
 
 func (r *PodmigrationReconciler) SetupWithManager(mgr ctrl.Manager) error {
+
+	if err := mgr.GetFieldIndexer().IndexField(&corev1.Pod{}, podOwnerKey, func(raw runtime.Object) []string {
+		pod := raw.(*corev1.Pod)
+		owner := metav1.GetControllerOf(pod)
+		if owner == nil {
+			return nil
+		}
+		if owner.Kind != "Podmigration" {
+			return nil
+		}
+
+		return []string{owner.Name}
+	}); err != nil {
+		return err
+	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&podmigv1.Podmigration{}).
 		Complete(r)
