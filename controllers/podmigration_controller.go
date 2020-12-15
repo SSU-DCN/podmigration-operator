@@ -29,6 +29,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	podOwnerKey = ".metadata.controller"
+	// migratingPodFinalizer = "podmig.schrej.net/Migrate"
+)
+
 // PodmigrationReconciler reconciles a Podmigration object
 type PodmigrationReconciler struct {
 	client.Client
@@ -49,9 +54,9 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 	if err := r.Get(ctx, req.NamespacedName, &migratingPod); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	log.Info("", "print test", tuongPod.Spec)
+	log.Info("", "print test", migratingPod.Spec)
 
-	// Then list all pods controlled by the Tuong resource object
+	// Then list all pods controlled by the Podmigration resource object
 	var childPods corev1.PodList
 	if err := r.List(ctx, &childPods, client.InNamespace(req.Namespace), client.MatchingField(podOwnerKey, req.Name)); err != nil {
 		log.Error(err, "unable to list child pods")
@@ -62,6 +67,11 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 	size := len(childPods.Items)
 	log.Info("", "template test", size)
 
+	pod, err := r.desiredPod(migratingPod, &migratingPod, req.Namespace)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	log.Info("", "disired pod ", pod)
 	return ctrl.Result{}, nil
 }
 

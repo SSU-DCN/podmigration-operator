@@ -26,8 +26,20 @@ import (
 
 // PodmigrationSpec defines the desired state of Podmigration
 type PodmigrationSpec struct {
+
+	// Number of desired pods. This is a pointer to distinguish between explicit
+	// zero and not specified. Defaults to 1.
+	// +optional
+	Replicas *int32 `json:"replicas,omitempty"`
+
+	// Label selector for pods. Existing ReplicaSets whose pods are
+	// selected by this will be the ones affected by this deployment.
+	// It must match the pod template's labels.
+	Selector *metav1.LabelSelector `json:"selector"`
+
 	// Template describes the pods that will be created.
 	// +kubebuilder:validation:Required
+
 	Template corev1.PodTemplateSpec `json:"template"`
 
 	// ExcludeNode indicates a node that the Pod should not get scheduled on or get migrated
