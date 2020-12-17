@@ -13,16 +13,19 @@ metadata:
     name: test
 spec:
   template:
+    metadata:
+      labels:
+        app: redis
+      annotations:
+        snapshotPolicy: "abcb"
+        snapshotPath: "/var/lib/kubelet/migration/mig61"
     spec:
-      metadata:
-        labels:
-          app: redis
       containers:
       - name: redis
         image: redis
         ports:
-          - containerPort: 6379
-            protocol: tcp
+        - containerPort: 6379
+          protocol: TCP
         resources:
           limits:
             memory: "128Mi"
