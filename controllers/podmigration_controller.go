@@ -81,10 +81,9 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 	log.Info("", "disired pod ", pod)
 	switch len(childPods.Items) {
 	case 0:
-
-		if annotations["snapshotPath"] == "" || annotations["snapshotPolicy"] == "" {
+		if annotations["snapshotPolicy"] == "" || annotations["snapshotPath"] == "" {
 			log.Info("", "snapshotPolicy and snapshotPath is not given", annotations["snapshotPath"])
-		} else {
+		} else if annotations["snapshotPolicy"] == "restore" {
 			// snapshotPath and snapshotPolicy is given, should check if snapshotPath is exist or not
 			_, err := os.Stat(annotations["snapshotPath"])
 			if os.IsNotExist(err) {
@@ -98,11 +97,39 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 				// snapshotPath found, logging
 				log.Info("", "snapshotPath found, we will start conatainer from checkpoint", annotations["snapshotPath"])
 			}
+		} else {
+			// In case there is no Pod running, we onnly accept snapshot = "restore"
+			// Reset Annotations.snapshotPolicy and snapshotPath in other case
+			pod.ObjectMeta.Annotations["snapshotPolicy"] = ""
+			pod.ObjectMeta.Annotations["snapshotPath"] = ""
 		}
 		if err := r.Create(ctx, pod); err != nil {
 			log.Error(err, "unable to create Pod for MigratingPod", "pod", pod)
 			return ctrl.Result{}, err
 		}
+	case 1:
+		// if we should restore, check the snapshotPath
+		// TODO(Tuong): clean code, not duplicate
+		// if annotations["snapshotPolicy"] == "restore" {
+		// 	// snapshotPath and snapshotPolicy is given, should check if snapshotPath is exist or not
+		// 	_, err := os.Stat(annotations["snapshotPath"])
+		// 	if os.IsNotExist(err) {
+		// 		// if snapshotPath not found, delete snapshotPolicy and snapshotPath
+		// 		// Pod then start as normal
+		// 		pod.ObjectMeta.Annotations["snapshotPolicy"] = ""
+		// 		pod.ObjectMeta.Annotations["snapshotPath"] = ""
+		// 		log.Info("", "snapshotPath not found, we will start pod as normal", annotations["snapshotPath"])
+
+		// 	} else {
+		// 		// snapshotPath found, logging
+		// 		log.Info("", "snapshotPath found, we will start conatainer from checkpoint", annotations["snapshotPath"])
+		// 	}
+		// }
+		// if err := r.Create(ctx, pod); err != nil {
+		// 	log.Error(err, "unable to create Pod for MigratingPod", "pod", pod)
+		// 	return ctrl.Result{}, err
+		// }
+
 	default:
 		log.Info("", "no action", annotations["snapshotPath"])
 
