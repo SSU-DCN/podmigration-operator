@@ -19,7 +19,6 @@ func (r *PodmigrationReconciler) desiredPod(migratingPod podmigv1.Podmigration, 
 	desiredAnnotations := getPodsAnnotationSet(template)
 	accessor, _ := meta.Accessor(parentObject)
 	prefix := getPodsPrefix(accessor.GetName())
-
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:    namespace,

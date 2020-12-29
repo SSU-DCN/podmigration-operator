@@ -75,16 +75,20 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 
 	template := &migratingPod.Spec.Template
 	annotations := getPodsAnnotationSet(template)
-	// annotations := template.ObjectMeta
+	replicas := int32(1)
+	if migratingPod.Spec.Replicas == nil {
+		migratingPod.Spec.Replicas = &replicas
+	}
 	log.Info("", "annotations ", annotations["snapshotPath"])
 	log.Info("", "disired pod ", childPods)
 	log.Info("", "disired pod ", pod)
-	switch len(childPods.Items) {
+	log.Info("", "disired pod ", migratingPod.Spec.Replicas)
+	switch int32(len(childPods.Items)) {
 	case 0:
 		if annotations["snapshotPolicy"] == "" || annotations["snapshotPath"] == "" {
 			log.Info("", "snapshotPolicy and snapshotPath is not given", annotations["snapshotPath"])
 		} else if annotations["snapshotPolicy"] == "restore" {
-			// snapshotPath and snapshotPolicy is given, should check if snapshotPath is exist or not
+			// snapshotPath and snapshotPolicy are given, should check if snapshotPath is exist or not
 			_, err := os.Stat(annotations["snapshotPath"])
 			if os.IsNotExist(err) {
 				// if snapshotPath not found, delete snapshotPolicy and snapshotPath
@@ -107,29 +111,30 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 			log.Error(err, "unable to create Pod for MigratingPod", "pod", pod)
 			return ctrl.Result{}, err
 		}
-	case 1:
+	case *migratingPod.Spec.Replicas:
 		// if we should restore, check the snapshotPath
 		// TODO(Tuong): clean code, not duplicate
-		// if annotations["snapshotPolicy"] == "restore" {
-		// 	// snapshotPath and snapshotPolicy is given, should check if snapshotPath is exist or not
-		// 	_, err := os.Stat(annotations["snapshotPath"])
-		// 	if os.IsNotExist(err) {
-		// 		// if snapshotPath not found, delete snapshotPolicy and snapshotPath
-		// 		// Pod then start as normal
-		// 		pod.ObjectMeta.Annotations["snapshotPolicy"] = ""
-		// 		pod.ObjectMeta.Annotations["snapshotPath"] = ""
-		// 		log.Info("", "snapshotPath not found, we will start pod as normal", annotations["snapshotPath"])
-
-		// 	} else {
-		// 		// snapshotPath found, logging
-		// 		log.Info("", "snapshotPath found, we will start conatainer from checkpoint", annotations["snapshotPath"])
-		// 	}
-		// }
-		// if err := r.Create(ctx, pod); err != nil {
-		// 	log.Error(err, "unable to create Pod for MigratingPod", "pod", pod)
-		// 	return ctrl.Result{}, err
-		// }
-
+		// applyOpts := []client.PatchOption{client.ForceOwnership, client.FieldOwner("podmigration-controller")}
+		curPod := &childPods.Items[0]
+		if annotations["snapshotPolicy"] == "checkpoint" && annotations["snapshotPath"] != "" {
+			// snapshotPolicy and snapshotPath ar given, checkpoint pod when it's running,
+			// log.Info("", "patch pod ", pod)
+			// curPod.ObjectMeta.Annotations["snapshotPolicy"] = "checkpoint"
+			// curPod.ObjectMeta.Annotations["snapshotPath"] = annotations["snapshotPath"]
+			newPod := curPod.DeepCopy()
+			ann := newPod.ObjectMeta.Annotations
+			if ann == nil {
+				ann = make(map[string]string)
+			}
+			ann["snapshotPolicy"] = "checkpoint"
+			ann["snapshotPath"] = annotations["snapshotPath"]
+			newPod.ObjectMeta.Annotations = ann
+			if err := r.Update(ctx, newPod); err != nil {
+				log.Error(err, "unable to patch annotaions", "pod", pod)
+				return ctrl.Result{}, err
+			}
+		}
+		log.Info("", "Pod annotation updated:", pod.ObjectMeta.Name)
 	default:
 		log.Info("", "no action", annotations["snapshotPath"])
 

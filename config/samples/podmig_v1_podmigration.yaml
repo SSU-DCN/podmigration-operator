@@ -16,9 +16,9 @@ spec:
     metadata:
       labels:
         app: redis
-      annotations:
-        snapshotPolicy: "checkpoint"
-        snapshotPath: "/var/lib/kubelet/migration"
+      #annotations:
+        #snapshotPolicy: "checkpoint"
+        #snapshotPath: "/var/lib/kubelet/migration"
     spec:
       containers:
       - name: redis
