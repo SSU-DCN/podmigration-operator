@@ -19,6 +19,10 @@ package controllers
 import (
 	"context"
 	"os"
+	"os/exec"
+	"path"
+	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -26,12 +30,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	podmigv1 "github.com/SSU-DCN/podmigration-operator/api/v1"
+	appsv1 "k8s.io/api/apps/v1"
+
 	corev1 "k8s.io/api/core/v1"
+	// corev1 "github.com/vutuong/kubernetes/tree/feature/pod-migration/staging/src/k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	podOwnerKey = ".metadata.controller"
+	// podOwnerKey = ".metadata.controller"
+	podOwnerKey = "migratingPod"
 	// migratingPodFinalizer = "podmig.schrej.net/Migrate"
 )
 
@@ -57,70 +65,114 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 	}
 	log.Info("", "print test", migratingPod.Spec)
 
+	template := &migratingPod.Spec.Template
+	desiredLabels := getPodsLabelSet(template)
+	desiredLabels["migratingPod"] = migratingPod.Name
+	annotations := getPodsAnnotationSet(template)
+
 	// Then list all pods controlled by the Podmigration resource object
 	var childPods corev1.PodList
-	if err := r.List(ctx, &childPods, client.InNamespace(req.Namespace), client.MatchingField(podOwnerKey, req.Name)); err != nil {
+	if err := r.List(ctx, &childPods, client.InNamespace(req.Namespace), client.MatchingLabels(desiredLabels)); err != nil {
 		log.Error(err, "unable to list child pods")
 		return ctrl.Result{}, err
 	}
-
-	// First test log the number of pods
-	size := len(childPods.Items)
-	log.Info("", "template test", size)
 
 	pod, err := r.desiredPod(migratingPod, &migratingPod, req.Namespace)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	template := &migratingPod.Spec.Template
-	annotations := getPodsAnnotationSet(template)
-	replicas := int32(1)
-	if migratingPod.Spec.Replicas == nil {
-		migratingPod.Spec.Replicas = &replicas
+	depl, err := r.desiredDeployment(migratingPod, &migratingPod, req.Namespace)
+	if err != nil {
+		return ctrl.Result{}, err
 	}
-	log.Info("", "annotations ", annotations["snapshotPath"])
-	log.Info("", "disired pod ", childPods)
-	log.Info("", "disired pod ", pod)
-	log.Info("", "disired pod ", migratingPod.Spec.Replicas)
-	switch int32(len(childPods.Items)) {
-	case 0:
-		if annotations["snapshotPolicy"] == "" || annotations["snapshotPath"] == "" {
-			log.Info("", "snapshotPolicy and snapshotPath is not given", annotations["snapshotPath"])
-		} else if annotations["snapshotPolicy"] == "restore" {
-			// snapshotPath and snapshotPolicy are given, should check if snapshotPath is exist or not
-			_, err := os.Stat(annotations["snapshotPath"])
-			if os.IsNotExist(err) {
-				// if snapshotPath not found, delete snapshotPolicy and snapshotPath
-				// Pod then start as normal
-				pod.ObjectMeta.Annotations["snapshotPolicy"] = ""
-				pod.ObjectMeta.Annotations["snapshotPath"] = ""
-				log.Info("", "snapshotPath not found, we will start pod as normal", annotations["snapshotPath"])
 
+	log.Info("", "annotations ", annotations["snapshotPath"])
+	log.Info("", "number of existing pod ", len(childPods.Items))
+	log.Info("", "desired pod ", pod)
+	log.Info("", "number of desired pod ", migratingPod.Spec.Replicas)
+
+	count, _, _ := r.getActualRunningPod(&childPods)
+	log.Info("", "number of actual running pod ", count)
+
+	if annotations["snapshotPolicy"] == "live-migration" && annotations["sourcePod"] != "" {
+		// list source pods for live-migration
+		sourcePod, err := r.checkPodExist(ctx, annotations["sourcePod"], req.Namespace)
+		if err != nil || sourcePod == nil {
+			log.Error(err, "sourcePod not exist", "pod", annotations["sourcePod"])
+			return ctrl.Result{}, err
+		}
+		log.Info("", "sourcePod ok ", sourcePod)
+		log.Info("", "sourcePod status ", sourcePod.Status.Phase)
+
+		// Step1: checkpoint sourcePod
+		copySourcePod := sourcePod.DeepCopy()
+		if err := r.checkpointPod(ctx, copySourcePod); err != nil {
+			log.Error(err, "unable to checkpoint", "pod", pod)
+			return ctrl.Result{}, err
+		}
+		log.Info("", "Live-migration", "Step1 - checkpoint source Pod - completed")
+		// for container := range copySourcePod.Spec.Containers {
+		// 	fmt.Println(copySourcePod.Spec.Containers[container].Name)
+		// 	log.Info("", "container of pod", copySourcePod.Spec.Containers[container].Name)
+		// }
+
+		// Step2: wait until checkpoint info are created
+		container := copySourcePod.Spec.Containers[0].Name
+		checkpointPath := path.Join("/var/lib/kubelet/migration/kkk", strings.Split(copySourcePod.Name, "-")[0])
+		log.Info("", "live-migration pod", container)
+		for {
+			_, err := os.Stat(path.Join(checkpointPath, container, "descriptors.json"))
+			if os.IsNotExist(err) {
+				time.Sleep(1000 * time.Millisecond)
 			} else {
-				// snapshotPath found, logging
-				log.Info("", "snapshotPath found, we will start conatainer from checkpoint", annotations["snapshotPath"])
+				break
 			}
-		} else {
-			// In case there is no Pod running, we onnly accept snapshot = "restore"
-			// Reset Annotations.snapshotPolicy and snapshotPath in other case
+		}
+		log.Info("", "Live-migration", "checkpointPath"+checkpointPath)
+		log.Info("", "Live-migration", "Step 2 - Wait until checkpoint info are created - completed")
+
+		// Step3: restore destPod from sourcePod checkpoted info
+		newPod, err := r.restorePod(ctx, pod, annotations["sourcePod"], checkpointPath)
+		if err != nil {
+			log.Error(err, "unable to restore", "pod", pod)
+			return ctrl.Result{}, err
+		}
+		log.Info("", "Live-migration", "Step 3 - Restore destPod from sourcePod's checkpointed info - completed")
+		time.Sleep(10)
+
+		// Step4: Clean checkpointpod process and checkpointPath
+		if err := r.removeCheckpointPod(ctx, copySourcePod, "/var/lib/kubelet/migration/kkk", newPod.Name, req.Namespace); err != nil {
+			log.Error(err, "unable to remove checkpoint", "pod", pod)
+			return ctrl.Result{}, err
+		}
+		log.Info("", "Live-migration", "Step 4 - Clean checkpointPod process and checkpointPath completed")
+		return ctrl.Result{}, nil
+	}
+	if count == 0 {
+		_, err := os.Stat(annotations["snapshotPath"])
+		if annotations["snapshotPolicy"] != "restore" && os.IsNotExist(err) {
 			pod.ObjectMeta.Annotations["snapshotPolicy"] = ""
 			pod.ObjectMeta.Annotations["snapshotPath"] = ""
 		}
-		if err := r.Create(ctx, pod); err != nil {
-			log.Error(err, "unable to create Pod for MigratingPod", "pod", pod)
+		if err := r.createMultiPod(ctx, migratingPod.Spec.Replicas, depl); err != nil {
+			log.Error(err, "unable to create Pod for restore", "pod", pod)
 			return ctrl.Result{}, err
 		}
-	case *migratingPod.Spec.Replicas:
-		// if we should restore, check the snapshotPath
-		// TODO(Tuong): clean code, not duplicate
-		// applyOpts := []client.PatchOption{client.ForceOwnership, client.FieldOwner("podmigration-controller")}
-		curPod := &childPods.Items[0]
-		if annotations["snapshotPolicy"] == "checkpoint" && annotations["snapshotPath"] != "" {
-			// snapshotPolicy and snapshotPath ar given, checkpoint pod when it's running,
-			// log.Info("", "patch pod ", pod)
-			// curPod.ObjectMeta.Annotations["snapshotPolicy"] = "checkpoint"
-			// curPod.ObjectMeta.Annotations["snapshotPath"] = annotations["snapshotPath"]
+	} else if count != 0 && count != migratingPod.Spec.Replicas {
+		_, err := os.Stat(annotations["snapshotPath"])
+		if annotations["snapshotPolicy"] != "restore" && os.IsNotExist(err) {
+			pod.ObjectMeta.Annotations["snapshotPolicy"] = ""
+			pod.ObjectMeta.Annotations["snapshotPath"] = ""
+		}
+		if err := r.updateMultiPod(ctx, migratingPod.Spec.Replicas-count, depl); err != nil {
+			log.Error(err, "unable to create Pod for restore", "pod", pod)
+			return ctrl.Result{}, err
+		}
+	} else {
+		_, err := os.Stat(annotations["snapshotPath"])
+		if annotations["snapshotPolicy"] == "checkpoint" && !os.IsNotExist(err) {
+			curPod := &childPods.Items[0]
 			newPod := curPod.DeepCopy()
 			ann := newPod.ObjectMeta.Annotations
 			if ann == nil {
@@ -130,21 +182,117 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 			ann["snapshotPath"] = annotations["snapshotPath"]
 			newPod.ObjectMeta.Annotations = ann
 			if err := r.Update(ctx, newPod); err != nil {
-				log.Error(err, "unable to patch annotaions", "pod", pod)
+				log.Error(err, "unable to patch annotations", "pod", pod)
 				return ctrl.Result{}, err
 			}
 		}
-		log.Info("", "Pod annotation updated:", pod.ObjectMeta.Name)
-	default:
-		log.Info("", "no action", annotations["snapshotPath"])
-
 	}
 	return ctrl.Result{}, nil
 }
 
-func (r *PodmigrationReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *PodmigrationReconciler) getActualRunningPod(childPods *corev1.PodList) (int, corev1.PodList, corev1.PodList) {
+	// if a pod is deleted, remove it from Actual running pod list
+	count := 0
+	var actualRunningPod, isDeletingPod corev1.PodList
+	for _, pod := range childPods.Items {
+		if !pod.DeletionTimestamp.IsZero() {
+			isDeletingPod.Items = append(isDeletingPod.Items, pod)
+		} else {
+			actualRunningPod.Items = append(actualRunningPod.Items, pod)
+			count++
+		}
+	}
+	return count, actualRunningPod, isDeletingPod
+}
 
-	if err := mgr.GetFieldIndexer().IndexField(&corev1.Pod{}, podOwnerKey, func(raw runtime.Object) []string {
+func (r *PodmigrationReconciler) createMultiPod(ctx context.Context, replicas int, depl *appsv1.Deployment) error {
+	if err := r.Create(ctx, depl); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *PodmigrationReconciler) updateMultiPod(ctx context.Context, replicas int, depl *appsv1.Deployment) error {
+	if err := r.Update(ctx, depl); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *PodmigrationReconciler) checkpointPod(ctx context.Context, pod *corev1.Pod) error {
+	snapshotPolicy := "checkpoint"
+	snapshotPath := "/var/lib/kubelet/migration/kkk"
+	if err := r.updateAnnotations(ctx, pod, snapshotPolicy, snapshotPath); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *PodmigrationReconciler) restorePod(ctx context.Context, pod *corev1.Pod, sourcePod, checkpointPath string) (*corev1.Pod, error) {
+	// targetPod := pod.DeepCopy()
+	// targetPod.Finalizers = append(targetPod.Finalizers, migratingPodFinalizer)
+	pod.Name = "tuongtest"
+	// pod.Spec.ClonePod = sourcePod
+	pod.ObjectMeta.Annotations["snapshotPolicy"] = "restore"
+	pod.ObjectMeta.Annotations["snapshotPath"] = checkpointPath
+	if err := r.Create(ctx, pod); err != nil {
+		return nil, err
+	}
+	return pod, nil
+}
+
+func (r *PodmigrationReconciler) removeCheckpointPod(ctx context.Context, pod *corev1.Pod, snapshotPathCurrent, newPodName, namespace string) error {
+	for {
+		ok, _ := r.checkPodExist(ctx, newPodName, namespace)
+		if ok != nil {
+			break
+		}
+	}
+	snapshotPolicyUpdate := ""
+	snapshotPathUpdate := ""
+	if err := r.updateAnnotations(ctx, pod, snapshotPolicyUpdate, snapshotPathUpdate); err != nil {
+		return err
+	}
+	os.Chmod(snapshotPathCurrent, 0777)
+	if _, err := exec.Command("sudo", "rm", "-rf", snapshotPathCurrent).Output(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *PodmigrationReconciler) updateAnnotations(ctx context.Context, pod *corev1.Pod, snapshotPolicy, snapshotPath string) error {
+	ann := pod.ObjectMeta.Annotations
+	if ann == nil {
+		ann = make(map[string]string)
+	}
+	ann["snapshotPolicy"] = snapshotPolicy
+	ann["snapshotPath"] = snapshotPath
+	pod.ObjectMeta.Annotations = ann
+	if err := r.Update(ctx, pod); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *PodmigrationReconciler) checkPodExist(ctx context.Context, name, namespace string) (*corev1.Pod, error) {
+	var childPods corev1.PodList
+	if err := r.List(ctx, &childPods, client.InNamespace(namespace)); err != nil {
+		return nil, err
+	}
+	if len(childPods.Items) > 0 {
+		for _, pod := range childPods.Items {
+			if pod.Name == name && pod.Status.Phase == "Running" {
+				return &pod, nil
+			}
+		}
+
+	}
+	return nil, nil
+
+}
+func (r *PodmigrationReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	ctx := context.Background()
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &corev1.Pod{}, podOwnerKey, func(raw runtime.Object) []string {
 		pod := raw.(*corev1.Pod)
 		owner := metav1.GetControllerOf(pod)
 		if owner == nil {

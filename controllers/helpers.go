@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	podmigv1 "github.com/SSU-DCN/podmigration-operator/api/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,6 +34,45 @@ func (r *PodmigrationReconciler) desiredPod(migratingPod podmigv1.Podmigration, 
 		return pod, err
 	}
 	return pod, nil
+}
+
+func (r *PodmigrationReconciler) desiredDeployment(migratingPod podmigv1.Podmigration, parentObject runtime.Object, namespace string) (*appsv1.Deployment, error) {
+	template := &migratingPod.Spec.Template
+	desiredLabels := getPodsLabelSet(template)
+	desiredFinalizers := getPodsFinalizers(template)
+	desiredAnnotations := getPodsAnnotationSet(template)
+	accessor, _ := meta.Accessor(parentObject)
+	prefix := getPodsPrefix(accessor.GetName())
+	podSpec := *template.Spec.DeepCopy()
+	replicas := int32(migratingPod.Spec.Replicas)
+	desiredLabels["migratingPod"] = migratingPod.Name
+	depl := &appsv1.Deployment{
+		TypeMeta: metav1.TypeMeta{APIVersion: appsv1.SchemeGroupVersion.String(), Kind: "Deployment"},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      migratingPod.Name,
+			Namespace: migratingPod.Namespace,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: desiredLabels,
+			},
+			Replicas: &replicas,
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace:    namespace,
+					Labels:       desiredLabels,
+					Finalizers:   desiredFinalizers,
+					Annotations:  desiredAnnotations,
+					GenerateName: prefix,
+				},
+				Spec: podSpec,
+			},
+		},
+	}
+	if err := ctrl.SetControllerReference(&migratingPod, depl, r.Scheme); err != nil {
+		return depl, err
+	}
+	return depl, nil
 }
 
 func getPodsLabelSet(template *corev1.PodTemplateSpec) labels.Set {

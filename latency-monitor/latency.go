@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -46,11 +47,11 @@ type pingPod struct {
 
 // get all worker node that is Ready
 func (lm *latencyMonitor) getWorkerNode() ([]string, error) {
-	// ctx := context.Context()
+	ctx := context.Background()
 	log.Printf("getWorkerNode function")
 	nodes := []string{}
 
-	nodeList, err := lm.client.CoreV1().Nodes().List(metav1.ListOptions{})
+	nodeList, err := lm.client.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		log.Printf("Unable to list cluster nodes")
 		return nil, err
@@ -96,10 +97,17 @@ func (lm *latencyMonitor) getPodTemplate(podName, expectedNode string) *core.Pod
 
 // deploy Ping Pod in the nodes
 func (lm *latencyMonitor) deployPingPod(expectedNode string) error {
+	ctx := context.Background()
+	// listOpts   = metav1.ListOptions{}
+	// getOpts    = metav1.GetOptions{}
+	// createOpts = metav1.CreateOptions{}
+	// updateOpts = metav1.UpdateOptions{}
+	// patchOpts  = metav1.PatchOptions{}
+	createOpts := metav1.CreateOptions{}
 	podName := "pingpod-" + expectedNode
 	pod := lm.getPodTemplate(podName, expectedNode)
 	// now create the pod in kubernetes cluster using the clientset
-	pod, err := lm.client.CoreV1().Pods(pod.Namespace).Create(pod)
+	pod, err := lm.client.CoreV1().Pods(pod.Namespace).Create(ctx, pod, createOpts)
 	if err != nil {
 		// panic(err)
 		return err
@@ -110,7 +118,8 @@ func (lm *latencyMonitor) deployPingPod(expectedNode string) error {
 
 // check Ping Pod is Running or not in a particular node
 func (lm *latencyMonitor) checkPingPod(expectedNode string) bool {
-	pods, err := lm.client.CoreV1().Pods("").List(metav1.ListOptions{
+	ctx := context.Background()
+	pods, err := lm.client.CoreV1().Pods("").List(ctx, metav1.ListOptions{
 		LabelSelector: "app=ping",
 		FieldSelector: "spec.nodeName=" + expectedNode,
 	})
@@ -131,7 +140,8 @@ func (lm *latencyMonitor) checkPingPod(expectedNode string) bool {
 
 // get IP of PingPod of a particular node
 func (lm *latencyMonitor) getPodIP(expectedNode string) string {
-	pod, _ := lm.client.CoreV1().Pods("default").List(metav1.ListOptions{
+	ctx := context.Background()
+	pod, _ := lm.client.CoreV1().Pods("default").List(ctx, metav1.ListOptions{
 		LabelSelector: "app=ping",
 		FieldSelector: "spec.nodeName=" + expectedNode,
 	})

@@ -20,7 +20,7 @@ type Podmigration struct {
 	Name string `json:"name"`
 	// Replicas string `json:"replicas"`
 	// Selector string `json:"selector"`
-	Replicas *int32                `json:"replicas"`
+	Replicas int                   `json:"replicas"`
 	Selector *metav1.LabelSelector `json:"selector"`
 	// Template corev1.PodTemplateSpec `json:"template"`
 	Status *v1.PodmigrationStatus `json:"status,omitempty"`

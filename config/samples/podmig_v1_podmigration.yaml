@@ -12,13 +12,15 @@ metadata:
   labels:
     name: test
 spec:
+  replicas: 1
   template:
     metadata:
       labels:
         app: redis
-      #annotations:
-        #snapshotPolicy: "checkpoint"
-        #snapshotPath: "/var/lib/kubelet/migration"
+      annotations:
+        snapshotPolicy: "restore"
+        snapshotPath: "/var/lib/kubelet/migration/ctconf2020"
+        #sourcePod: "test-7f66c57c86-6gfdm"
     spec:
       containers:
       - name: redis
@@ -30,3 +32,5 @@ spec:
           limits:
             memory: "128Mi"
             cpu: "500m"
+      nodeSelector:
+        kubernetes.io/hostname: worker1 
