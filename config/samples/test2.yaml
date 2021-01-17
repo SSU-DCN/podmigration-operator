@@ -24,10 +24,10 @@ spec:
     spec:
       containers:
       - name: vlc
-        image: lroktu/vlc-server:latest
+        image: tuongvx/vlc-app:latest
         ports:
         - containerPort: 8080
           protocol: TCP
         #args: ["big_buck_bunny.mp4","--loop","--sout", "#transcode{scodec=none}:http{mux=ffmpeg{mux=flv},dst=:8080/}"]
       nodeSelector:
-        kubernetes.io/hostname: worker2
+        kubernetes.io/hostname: worker1

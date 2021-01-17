@@ -131,7 +131,7 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		}
 		log.Info("", "Live-migration", "checkpointPath"+checkpointPath)
 		log.Info("", "Live-migration", "Step 2 - Wait until checkpoint info are created - completed")
-
+		// time.Sleep(10)
 		// Step3: restore destPod from sourcePod checkpoted info
 		newPod, err := r.restorePod(ctx, pod, annotations["sourcePod"], checkpointPath)
 		if err != nil {
@@ -139,14 +139,19 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 			return ctrl.Result{}, err
 		}
 		log.Info("", "Live-migration", "Step 3 - Restore destPod from sourcePod's checkpointed info - completed")
-		time.Sleep(10)
-
+		time.Sleep(5)
 		// Step4: Clean checkpointpod process and checkpointPath
 		if err := r.removeCheckpointPod(ctx, copySourcePod, "/var/lib/kubelet/migration/kkk", newPod.Name, req.Namespace); err != nil {
 			log.Error(err, "unable to remove checkpoint", "pod", pod)
 			return ctrl.Result{}, err
 		}
 		log.Info("", "Live-migration", "Step 4 - Clean checkpointPod process and checkpointPath completed")
+
+		// step5: Delete source Pod
+		if err := r.deletePod(ctx, sourcePod); err != nil {
+			log.Error(err, "unable to delete", "source pod", sourcePod)
+			return ctrl.Result{}, err
+		}
 		return ctrl.Result{}, nil
 	}
 	if count == 0 {
@@ -214,6 +219,13 @@ func (r *PodmigrationReconciler) createMultiPod(ctx context.Context, replicas in
 
 func (r *PodmigrationReconciler) updateMultiPod(ctx context.Context, replicas int, depl *appsv1.Deployment) error {
 	if err := r.Update(ctx, depl); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *PodmigrationReconciler) deletePod(ctx context.Context, pod *corev1.Pod) error {
+	if err := r.Delete(ctx, pod); err != nil {
 		return err
 	}
 	return nil
