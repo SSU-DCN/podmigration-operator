@@ -17,10 +17,26 @@ make run
 ```
 go run ./api-server/cmd/main.go
 ```
-* To test create Pod by calling Api-server:
+## Test live-migrate pod:
+* Run/check video-stream application:
 ```
-curl --request POST 'localhost:5000/Podmigrations' --header 'Content-Type: application/json' --data-raw '{"name":"mig61"}'
-curl --request GET 'localhost:5000/Podmigrations'
+$ cd podmigration-operator/config/samples
+$ kubectl apply -f 2.yaml
+$ kubectl get pods
+```
+* Live-migrate video-stream application via api-server:
+```
+$ curl --request POST 'localhost:5000/Podmigrations' --header 'Content-Type: application/json' --data-raw '{"name":"test1", "replicas":1, "action":"live-migration", "sourcePod":"video", "destHost":"worker1"}'
+$ curl --request GET 'localhost:5000/Podmigrations'
+```
+* Live-migrate video-stream application via kubectl:
+```
+$ kubectl apply -f test2.yaml
+```
+* To delete:
+```
+$ kubectl delete podmigration test2
+$ kubectl delete -f test2.yaml
 ```
 ## Note
 This operator is controller of Kuberntes Pod migration for Kubernetes. It needs several changes to work such as: kubelet, container-runtime-cri (containerd-cri). The modified vesions of Kuberntes and containerd-cri beside this operator can be found in the following repos:
