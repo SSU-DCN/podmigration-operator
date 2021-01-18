@@ -13,14 +13,14 @@ metadata:
     name: test2
 spec:
   replicas: 1
+  action: "live-migration"
+  #snapshotPath: "/var/lib/kubelet/migration"
+  sourcePod: "video"
+
   template:
     metadata:
       labels:
         app: video
-      annotations:
-        snapshotPolicy: "live-migration"
-        #snapshotPath: "/var/lib/kubelet/migration"
-        sourcePod: "video"
     spec:
       containers:
       - name: vlc
@@ -30,4 +30,4 @@ spec:
           protocol: TCP
         #args: ["big_buck_bunny.mp4","--loop","--sout", "#transcode{scodec=none}:http{mux=ffmpeg{mux=flv},dst=:8080/}"]
       nodeSelector:
-        kubernetes.io/hostname: worker1
+        kubernetes.io/hostname: worker2

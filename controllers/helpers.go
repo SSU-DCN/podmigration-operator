@@ -17,7 +17,7 @@ func (r *PodmigrationReconciler) desiredPod(migratingPod podmigv1.Podmigration, 
 	template := &migratingPod.Spec.Template
 	desiredLabels := getPodsLabelSet(template)
 	desiredFinalizers := getPodsFinalizers(template)
-	desiredAnnotations := getPodsAnnotationSet(template)
+	desiredAnnotations := getPodsAnnotationSet(&migratingPod)
 	accessor, _ := meta.Accessor(parentObject)
 	prefix := getPodsPrefix(accessor.GetName())
 	pod := &corev1.Pod{
@@ -40,7 +40,7 @@ func (r *PodmigrationReconciler) desiredDeployment(migratingPod podmigv1.Podmigr
 	template := &migratingPod.Spec.Template
 	desiredLabels := getPodsLabelSet(template)
 	desiredFinalizers := getPodsFinalizers(template)
-	desiredAnnotations := getPodsAnnotationSet(template)
+	desiredAnnotations := getPodsAnnotationSet(&migratingPod)
 	accessor, _ := meta.Accessor(parentObject)
 	prefix := getPodsPrefix(accessor.GetName())
 	podSpec := *template.Spec.DeepCopy()
@@ -89,11 +89,16 @@ func getPodsFinalizers(template *corev1.PodTemplateSpec) []string {
 	return desiredFinalizers
 }
 
-func getPodsAnnotationSet(template *corev1.PodTemplateSpec) labels.Set {
+func getPodsAnnotationSet(migratingPod *podmigv1.Podmigration) labels.Set {
+	template := &migratingPod.Spec.Template
 	desiredAnnotations := make(labels.Set)
 	for k, v := range template.Annotations {
 		desiredAnnotations[k] = v
 	}
+
+	desiredAnnotations["sourcePod"] = migratingPod.Spec.SourcePod
+	desiredAnnotations["snapshotPolicy"] = migratingPod.Spec.Action
+	desiredAnnotations["snapshotPath"] = migratingPod.Spec.SnapshotPath
 	return desiredAnnotations
 }
 

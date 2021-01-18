@@ -13,18 +13,22 @@ metadata:
     name: test1
 spec:
   replicas: 1
+  action: "live-migration"
+  #snapshotPath: "/var/lib/kubelet/migration"
+  sourcePod: "simple"
   template:
     metadata:
       labels:
         app: simple
-      annotations:
-        snapshotPolicy: "live-migration"
-        #snapshotPath: "/var/lib/kubelet/migration"
-        sourcePod: "simple"
-        #sourcePod: "cccc"
     spec:
       containers:
       - name: count
         image: alpine
+      ports:
+      - containerPort: 80
+      resources:
+        limits:
+          memory: "128Mi"
+          cpu: "600m"
       nodeSelector:
-        kubernetes.io/hostname: worker2
+        kubernetes.io/hostname: worker1

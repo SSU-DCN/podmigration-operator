@@ -68,7 +68,7 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 	template := &migratingPod.Spec.Template
 	desiredLabels := getPodsLabelSet(template)
 	desiredLabels["migratingPod"] = migratingPod.Name
-	annotations := getPodsAnnotationSet(template)
+	annotations := getPodsAnnotationSet(&migratingPod)
 
 	// Then list all pods controlled by the Podmigration resource object
 	var childPods corev1.PodList
@@ -108,7 +108,7 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		// Step1: checkpoint sourcePod
 		copySourcePod := sourcePod.DeepCopy()
 		if err := r.checkpointPod(ctx, copySourcePod); err != nil {
-			log.Error(err, "unable to checkpoint", "pod", pod)
+			log.Error(err, "unable to checkpoint", "pod", sourcePod)
 			return ctrl.Result{}, err
 		}
 		log.Info("", "Live-migration", "Step1 - checkpoint source Pod - completed")
@@ -135,14 +135,14 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		// Step3: restore destPod from sourcePod checkpoted info
 		newPod, err := r.restorePod(ctx, pod, annotations["sourcePod"], checkpointPath)
 		if err != nil {
-			log.Error(err, "unable to restore", "pod", pod)
+			log.Error(err, "unable to restore", "pod", sourcePod)
 			return ctrl.Result{}, err
 		}
 		log.Info("", "Live-migration", "Step 3 - Restore destPod from sourcePod's checkpointed info - completed")
-		time.Sleep(5)
+		// time.Sleep(5)
 		// Step4: Clean checkpointpod process and checkpointPath
 		if err := r.removeCheckpointPod(ctx, copySourcePod, "/var/lib/kubelet/migration/kkk", newPod.Name, req.Namespace); err != nil {
-			log.Error(err, "unable to remove checkpoint", "pod", pod)
+			log.Error(err, "unable to remove checkpoint", "pod", sourcePod)
 			return ctrl.Result{}, err
 		}
 		log.Info("", "Live-migration", "Step 4 - Clean checkpointPod process and checkpointPath completed")
@@ -243,7 +243,7 @@ func (r *PodmigrationReconciler) checkpointPod(ctx context.Context, pod *corev1.
 func (r *PodmigrationReconciler) restorePod(ctx context.Context, pod *corev1.Pod, sourcePod, checkpointPath string) (*corev1.Pod, error) {
 	// targetPod := pod.DeepCopy()
 	// targetPod.Finalizers = append(targetPod.Finalizers, migratingPodFinalizer)
-	pod.Name = "tuongtest"
+	pod.Name = sourcePod + "-migration"
 	// pod.Spec.ClonePod = sourcePod
 	pod.ObjectMeta.Annotations["snapshotPolicy"] = "restore"
 	pod.ObjectMeta.Annotations["snapshotPath"] = checkpointPath
@@ -300,7 +300,6 @@ func (r *PodmigrationReconciler) checkPodExist(ctx context.Context, name, namesp
 
 	}
 	return nil, nil
-
 }
 func (r *PodmigrationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	ctx := context.Background()

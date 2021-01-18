@@ -30,8 +30,9 @@ type PodmigrationSpec struct {
 	// Number of desired pods. This is a pointer to distinguish between explicit
 	// zero and not specified. Defaults to 1.
 	// +optional
-	Replicas int `json:"replicas,omitempty"`
-
+	Replicas  int    `json:"replicas,omitempty"`
+	SourcePod string `json:"sourcePod"`
+	DestHost  string `json:"DestHost"`
 	// Label selector for pods. Existing ReplicaSets whose pods are
 	// selected by this will be the ones affected by this deployment.
 	// It must match the pod template's labels.
@@ -39,6 +40,8 @@ type PodmigrationSpec struct {
 
 	// Template describes the pods that will be created.
 	// +kubebuilder:validation:Required
+	Action       string `json:"action"`
+	SnapshotPath string `json:"snapshotPath"`
 
 	Template corev1.PodTemplateSpec `json:"template"`
 

@@ -11,13 +11,13 @@ spec:
   containers:
   - name: count
     image: alpine
-    imagePullPolicy: IfNotPresent
+    # imagePullPolicy: IfNotPresent
     command: ["/bin/ash", "-c", "i=1; while true; do echo $i; i=$((i+1)); sleep 1; done"]
     ports:
-      - containerPort: 80
+    - containerPort: 80
     resources:
       limits:
         memory: "128Mi"
         cpu: "600m"
   nodeSelector:
-    kubernetes.io/hostname: worker1
+    kubernetes.io/hostname: worker2

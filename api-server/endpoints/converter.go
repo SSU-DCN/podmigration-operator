@@ -10,11 +10,13 @@ type from struct{}
 
 func (c *from) Object(pm *v1.Podmigration) *Podmigration {
 	return &Podmigration{
-		Name:     pm.Name,
-		Replicas: pm.Spec.Replicas,
-		Selector: pm.Spec.Selector,
-		// Template: pm.Spec.Template,
-		Status: &pm.Status,
+		Name:         pm.Name,
+		Replicas:     pm.Spec.Replicas,
+		Selector:     pm.Spec.Selector,
+		Action:       pm.Spec.Action,
+		SnapshotPath: pm.Spec.SnapshotPath,
+		SourcePod:    pm.Spec.SourcePod,
+		Status:       &pm.Status,
 	}
 }
 
