@@ -34,10 +34,10 @@ spec:
         spec:
           description: PodmigrationSpec defines the desired state of Podmigration
           properties:
-            DestHost:
-              type: string
             action:
               description: Template describes the pods that will be created.
+              type: string
+            destHost:
               type: string
             replicas:
               description: Number of desired pods. This is a pointer to distinguish
@@ -5913,8 +5913,8 @@ spec:
                   type: object
               type: object
           required:
-          - DestHost
           - action
+          - destHost
           - selector
           - snapshotPath
           - sourcePod

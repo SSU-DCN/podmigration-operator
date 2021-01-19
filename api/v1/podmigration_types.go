@@ -32,7 +32,7 @@ type PodmigrationSpec struct {
 	// +optional
 	Replicas  int    `json:"replicas,omitempty"`
 	SourcePod string `json:"sourcePod"`
-	DestHost  string `json:"DestHost"`
+	DestHost  string `json:"destHost"`
 	// Label selector for pods. Existing ReplicaSets whose pods are
 	// selected by this will be the ones affected by this deployment.
 	// It must match the pod template's labels.

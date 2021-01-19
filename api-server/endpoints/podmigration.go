@@ -99,7 +99,7 @@ func (pe *PodmigrationEndpoint) create(request *restful.Request, response *restf
 								{
 									Name:  container.Name,
 									Image: container.Image,
-									Ports: container.Ports
+									Ports: container.Ports,
 								},
 							},
 						},
@@ -135,9 +135,9 @@ func (pe *PodmigrationEndpoint) create(request *restful.Request, response *restf
 			},
 		}
 	}
-	fmt.Println(template)
-	fmt.Println(pm.DestHost)
-	fmt.Println(template.Spec.NodeSelector)
+	// fmt.Println(template)
+	// fmt.Println(pm.DestHost)
+	// fmt.Println(template.Spec.NodeSelector)
 	obj := &v1.Podmigration{
 		ObjectMeta: metav1.ObjectMeta{Name: pm.Name, Namespace: "default"},
 		Spec: v1.PodmigrationSpec{

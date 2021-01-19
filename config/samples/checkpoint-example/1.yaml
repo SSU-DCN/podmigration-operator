@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simple
+  labels:
+    name: simple
+  #annotations:
+    #snapshotPolicy: "checkpoint"
+    #snapshotPath: "/var/lib/kubelet/migration/abc"
+spec:
+  containers:
+  - name: count
+    image: alpine
+    # imagePullPolicy: IfNotPresent
+    command: ["/bin/ash", "-c", "i=1; while true; do echo $i; i=$((i+1)); sleep 1; done"]
+    ports:
+    - containerPort: 80
+    resources:
+      limits:
+        memory: "128Mi"
+        cpu: "600m"
+  nodeSelector:
+    kubernetes.io/hostname: worker2

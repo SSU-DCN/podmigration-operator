@@ -17,6 +17,7 @@ require (
 	github.com/go-logr/logr v0.1.0
 	github.com/onsi/ginkgo v1.12.1
 	github.com/onsi/gomega v1.10.1
+	github.com/spf13/cobra v0.0.5
 	gonum.org/v1/netlib v0.0.0-20190331212654-76723241ea4e // indirect
 	k8s.io/api v0.18.6
 	k8s.io/apimachinery v0.18.6

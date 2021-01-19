@@ -18,9 +18,11 @@ package controllers
 
 import (
 	"context"
+	"math/rand"
 	"os"
 	"os/exec"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
@@ -243,7 +245,10 @@ func (r *PodmigrationReconciler) checkpointPod(ctx context.Context, pod *corev1.
 func (r *PodmigrationReconciler) restorePod(ctx context.Context, pod *corev1.Pod, sourcePod, checkpointPath string) (*corev1.Pod, error) {
 	// targetPod := pod.DeepCopy()
 	// targetPod.Finalizers = append(targetPod.Finalizers, migratingPodFinalizer)
-	pod.Name = sourcePod + "-migration"
+	s1 := rand.NewSource(time.Now().UnixNano())
+	number := rand.New(s1)
+	sourcePod = strings.Split(sourcePod, "-migration-")[0]
+	pod.Name = sourcePod + "-migration-" + strconv.Itoa(number.Intn(100))
 	// pod.Spec.ClonePod = sourcePod
 	pod.ObjectMeta.Annotations["snapshotPolicy"] = "restore"
 	pod.ObjectMeta.Annotations["snapshotPath"] = checkpointPath
