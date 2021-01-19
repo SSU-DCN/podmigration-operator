@@ -24,14 +24,19 @@ $ cd podmigration-operator/config/samples
 $ kubectl apply -f 2.yaml
 $ kubectl get pods
 ```
-* Live-migrate video-stream application via api-server:
+#### There are three options to live-migrate a running Pod as following:
+1. Live-migrate video-stream application via api-server:
 ```
 $ curl --request POST 'localhost:5000/Podmigrations' --header 'Content-Type: application/json' --data-raw '{"name":"test1", "replicas":1, "action":"live-migration", "sourcePod":"video", "destHost":"worker1"}'
 $ curl --request GET 'localhost:5000/Podmigrations'
 ```
-* Live-migrate video-stream application via kubectl:
+2. Live-migrate video-stream application via kubectl apply:
 ```
 $ kubectl apply -f test2.yaml
+```
+3. Live-migrate video-stream application via kubectl migrate command:
+```
+$ kubectl migrate video worker1
 ```
 * To delete:
 ```
