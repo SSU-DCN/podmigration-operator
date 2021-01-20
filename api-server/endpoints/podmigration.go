@@ -2,6 +2,7 @@ package endpoints
 
 import (
 	"fmt"
+	"strings"
 
 	v1 "github.com/SSU-DCN/podmigration-operator/api/v1"
 	"github.com/emicklei/go-restful"
@@ -56,7 +57,12 @@ func (pe *PodmigrationEndpoint) list(request *restful.Request, response *restful
 func (pe *PodmigrationEndpoint) create(request *restful.Request, response *restful.Response) {
 	pm := new(Podmigration)
 	err := request.ReadEntity(pm)
-
+	pm.Action = strings.ToLower(pm.Action)
+	fmt.Println(pm)
+	fmt.Println(pm.Action)
+	fmt.Println(pm.SourcePod)
+	fmt.Println(pm)
+	fmt.Println("what the hell")
 	if err != nil {
 		writeError(response, 400, Error{
 			Title:   "Bad Request",
@@ -76,7 +82,9 @@ func (pe *PodmigrationEndpoint) create(request *restful.Request, response *restf
 	// Check whether sourcePod of live-migration is exist or not
 	var sourcePod *corev1.Pod
 	var template corev1.PodTemplateSpec
-	if pm.Action == "live-migration" && pm.SourcePod != "" {
+	// if pm.Action == "live-migration" && pm.SourcePod != "" {
+	if pm.SourcePod != "" {
+		fmt.Println(pm.SourcePod)
 		var childPods corev1.PodList
 		if err := pe.client.List(request.Request.Context(), &childPods, client.InNamespace(namespace)); err != nil {
 			writeError(response, 400, Error{
@@ -88,7 +96,6 @@ func (pe *PodmigrationEndpoint) create(request *restful.Request, response *restf
 
 		if len(childPods.Items) > 0 {
 			for _, pod := range childPods.Items {
-				fmt.Println(pod.Name)
 				if pod.Name == pm.SourcePod && pod.Status.Phase == "Running" {
 					sourcePod = pod.DeepCopy()
 					container := sourcePod.Spec.Containers[0]
@@ -135,7 +142,7 @@ func (pe *PodmigrationEndpoint) create(request *restful.Request, response *restf
 			},
 		}
 	}
-	// fmt.Println(template)
+	fmt.Println(template)
 	// fmt.Println(pm.DestHost)
 	// fmt.Println(template.Spec.NodeSelector)
 	obj := &v1.Podmigration{

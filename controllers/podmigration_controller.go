@@ -98,30 +98,36 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 	log.Info("", "number of actual running pod ", count)
 
 	if annotations["snapshotPolicy"] == "live-migration" && annotations["sourcePod"] != "" {
-		// list source pods for live-migration
+		// We are live-migrate a running pod here - Hot scale
+		// Step1: Check source pod is exist or not clean previous source pod checkpoint/restore annotations and snapshotPath
 		sourcePod, err := r.checkPodExist(ctx, annotations["sourcePod"], req.Namespace)
 		if err != nil || sourcePod == nil {
 			log.Error(err, "sourcePod not exist", "pod", annotations["sourcePod"])
 			return ctrl.Result{}, err
 		}
+		if err := r.removeCheckpointPod(ctx, sourcePod, "/var/lib/kubelet/migration/kkk", "", req.Namespace); err != nil {
+			log.Error(err, "unable to remove checkpoint", "pod", sourcePod)
+			return ctrl.Result{}, err
+		}
+		log.Info("", "Live-migration", "Step 1 - Check source pod is exist or not - completed")
 		log.Info("", "sourcePod ok ", sourcePod)
 		log.Info("", "sourcePod status ", sourcePod.Status.Phase)
-
-		// Step1: checkpoint sourcePod
-		copySourcePod := sourcePod.DeepCopy()
-		if err := r.checkpointPod(ctx, copySourcePod); err != nil {
+		// Step2: checkpoint sourcePod
+		// copySourcePod := sourcePod.DeepCopy()
+		if err := r.checkpointPod(ctx, sourcePod, ""); err != nil {
 			log.Error(err, "unable to checkpoint", "pod", sourcePod)
 			return ctrl.Result{}, err
 		}
-		log.Info("", "Live-migration", "Step1 - checkpoint source Pod - completed")
+		log.Info("", "Live-migration", "Step 2 - checkpoint source Pod - completed")
+		// TODO(TUONG): make migrate all container inside Pod
 		// for container := range copySourcePod.Spec.Containers {
 		// 	fmt.Println(copySourcePod.Spec.Containers[container].Name)
 		// 	log.Info("", "container of pod", copySourcePod.Spec.Containers[container].Name)
 		// }
 
-		// Step2: wait until checkpoint info are created
-		container := copySourcePod.Spec.Containers[0].Name
-		checkpointPath := path.Join("/var/lib/kubelet/migration/kkk", strings.Split(copySourcePod.Name, "-")[0])
+		// Step3: wait until checkpoint info are created
+		container := sourcePod.Spec.Containers[0].Name
+		checkpointPath := path.Join("/var/lib/kubelet/migration/kkk", strings.Split(sourcePod.Name, "-")[0])
 		log.Info("", "live-migration pod", container)
 		for {
 			_, err := os.Stat(path.Join(checkpointPath, container, "descriptors.json"))
@@ -132,31 +138,33 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 			}
 		}
 		log.Info("", "Live-migration", "checkpointPath"+checkpointPath)
-		log.Info("", "Live-migration", "Step 2 - Wait until checkpoint info are created - completed")
+		log.Info("", "Live-migration", "Step 3 - Wait until checkpoint info are created - completed")
 		// time.Sleep(10)
-		// Step3: restore destPod from sourcePod checkpoted info
+		// Step4: restore destPod from sourcePod checkpoted info
 		newPod, err := r.restorePod(ctx, pod, annotations["sourcePod"], checkpointPath)
 		if err != nil {
 			log.Error(err, "unable to restore", "pod", sourcePod)
 			return ctrl.Result{}, err
 		}
-		log.Info("", "Live-migration", "Step 3 - Restore destPod from sourcePod's checkpointed info - completed")
+		log.Info("", "Live-migration", "Step 4 - Restore destPod from sourcePod's checkpointed info - completed")
 		// time.Sleep(5)
-		// Step4: Clean checkpointpod process and checkpointPath
-		if err := r.removeCheckpointPod(ctx, copySourcePod, "/var/lib/kubelet/migration/kkk", newPod.Name, req.Namespace); err != nil {
+		// Step5: Clean checkpointpod process and checkpointPath
+		if err := r.removeCheckpointPod(ctx, sourcePod, "/var/lib/kubelet/migration/kkk", newPod.Name, req.Namespace); err != nil {
 			log.Error(err, "unable to remove checkpoint", "pod", sourcePod)
 			return ctrl.Result{}, err
 		}
-		log.Info("", "Live-migration", "Step 4 - Clean checkpointPod process and checkpointPath completed")
+		log.Info("", "Live-migration", "Step 5 - Clean checkpointPod process and checkpointPath - completed")
 
-		// step5: Delete source Pod
+		// Step6: Delete source Pod
 		if err := r.deletePod(ctx, sourcePod); err != nil {
 			log.Error(err, "unable to delete", "source pod", sourcePod)
 			return ctrl.Result{}, err
 		}
+		log.Info("", "Live-migration", "Step 6 - Delete the source pod - completed")
 		return ctrl.Result{}, nil
 	}
-	if count == 0 {
+	if count == 0 && annotations["snapshotPolicy"] == "restore" {
+		// We are restoring pods here - Warm scale
 		_, err := os.Stat(annotations["snapshotPath"])
 		if annotations["snapshotPolicy"] != "restore" && os.IsNotExist(err) {
 			pod.ObjectMeta.Annotations["snapshotPolicy"] = ""
@@ -166,6 +174,7 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 			log.Error(err, "unable to create Pod for restore", "pod", pod)
 			return ctrl.Result{}, err
 		}
+		log.Info("", "Restore", "Step 0 - Create multiple pods from checkpoint infomation - completed")
 	} else if count != 0 && count != migratingPod.Spec.Replicas {
 		_, err := os.Stat(annotations["snapshotPath"])
 		if annotations["snapshotPolicy"] != "restore" && os.IsNotExist(err) {
@@ -176,22 +185,30 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 			log.Error(err, "unable to create Pod for restore", "pod", pod)
 			return ctrl.Result{}, err
 		}
+		log.Info("", "Restore", "Step 0 - Scale multiple pods from checkpoint infomation - completed")
 	} else {
-		_, err := os.Stat(annotations["snapshotPath"])
-		if annotations["snapshotPolicy"] == "checkpoint" && !os.IsNotExist(err) {
-			curPod := &childPods.Items[0]
-			newPod := curPod.DeepCopy()
-			ann := newPod.ObjectMeta.Annotations
-			if ann == nil {
-				ann = make(map[string]string)
-			}
-			ann["snapshotPolicy"] = "checkpoint"
-			ann["snapshotPath"] = annotations["snapshotPath"]
-			newPod.ObjectMeta.Annotations = ann
-			if err := r.Update(ctx, newPod); err != nil {
-				log.Error(err, "unable to patch annotations", "pod", pod)
+		// We are checkpointing a running pod here
+		if annotations["snapshotPolicy"] == "checkpoint" && annotations["sourcePod"] != "" {
+			_, err := os.Stat(annotations["snapshotPath"])
+			// Step1: Check source pod is exist or not
+			sourcePod, err := r.checkPodExist(ctx, annotations["sourcePod"], req.Namespace)
+			if err != nil || sourcePod == nil {
+				log.Error(err, "sourcePod not exist", "pod", annotations["sourcePod"])
 				return ctrl.Result{}, err
 			}
+			log.Info("", "Checkpoint", "Step 1 - Check the snapshotPaht is exist or not - completed")
+			// Step2: Clean previous checkpoint folder if exist
+			if err := r.removeCheckpointPod(ctx, sourcePod, annotations["snapshotPath"], "", req.Namespace); err != nil {
+				log.Error(err, "unable to remove checkpoint", "pod", sourcePod)
+				return ctrl.Result{}, err
+			}
+			log.Info("", "Checkpoint", "Step 2 - Clean previous checkpoint folder if exist - completed")
+			// Step3: Checkpoint the source pod now
+			if err := r.checkpointPod(ctx, sourcePod, annotations["snapshotPath"]); err != nil {
+				log.Error(err, "unable to checkpoint", "pod", sourcePod)
+				return ctrl.Result{}, err
+			}
+			log.Info("", "Checkpoint", "Step 3 - Checkpoint source Pod and save it - completed")
 		}
 	}
 	return ctrl.Result{}, nil
@@ -233,9 +250,11 @@ func (r *PodmigrationReconciler) deletePod(ctx context.Context, pod *corev1.Pod)
 	return nil
 }
 
-func (r *PodmigrationReconciler) checkpointPod(ctx context.Context, pod *corev1.Pod) error {
+func (r *PodmigrationReconciler) checkpointPod(ctx context.Context, pod *corev1.Pod, snapshotPath string) error {
 	snapshotPolicy := "checkpoint"
-	snapshotPath := "/var/lib/kubelet/migration/kkk"
+	if snapshotPath == "" {
+		snapshotPath = "/var/lib/kubelet/migration/kkk"
+	}
 	if err := r.updateAnnotations(ctx, pod, snapshotPolicy, snapshotPath); err != nil {
 		return err
 	}
@@ -259,10 +278,12 @@ func (r *PodmigrationReconciler) restorePod(ctx context.Context, pod *corev1.Pod
 }
 
 func (r *PodmigrationReconciler) removeCheckpointPod(ctx context.Context, pod *corev1.Pod, snapshotPathCurrent, newPodName, namespace string) error {
-	for {
-		ok, _ := r.checkPodExist(ctx, newPodName, namespace)
-		if ok != nil {
-			break
+	if newPodName != "" {
+		for {
+			ok, _ := r.checkPodExist(ctx, newPodName, namespace)
+			if ok != nil {
+				break
+			}
 		}
 	}
 	snapshotPolicyUpdate := ""
