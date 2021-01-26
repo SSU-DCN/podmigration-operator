@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: tuongvx
+  labels:
+    app: redmineapp
+  #annotations:
+    #snapshotPolicy: "checkpoint"
+    #snapshotPath: "/var/lib/kubelet/migration/abc"
+spec:
+  containers:
+  - name: tuong
+    image: jenkins/jenkins:lts
+    ports:
+    - containerPort: 8080
+      protocol: TCP
+    - containerPort: 50000
+    volumeMounts:
+    - name: nfs-tmp
+      mountPath: /tmp
+  nodeSelector:
+    kubernetes.io/hostname: worker1
+  volumes:
+  - name: nfs-tmp
+    hostPath:
+      path: /var/lib/kubelet/migration/jenkins

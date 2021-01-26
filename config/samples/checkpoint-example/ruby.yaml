@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: tuongvx
+  labels:
+    app: rubyapp
+  #annotations:
+    #snapshotPolicy: "checkpoint"
+    #snapshotPath: "/var/lib/kubelet/migration/abc"
+spec:
+  containers:
+  - name: tuong
+    image: tylerfowler/superset
+    ports:
+    - containerPort: 8088
+      protocol: TCP
+  nodeSelector:
+    kubernetes.io/hostname: worker1

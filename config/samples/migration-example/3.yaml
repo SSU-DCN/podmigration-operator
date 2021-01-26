@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: migration
+  labels:
+    app: video
+  annotations:
+    snapshotPolicy: "restore"
+    snapshotPath: "/var/lib/kubelet/migration/ooo/video"
+spec:
+  containers:
+  - name: vlc
+    image: tuongvx/vlc-app:latest
+    ports:
+    - containerPort: 8080
+      protocol: TCP
+    #args: ["big_buck_bunny.mp4","--loop","--sout", "#transcode{scodec=none}:http{mux=ffmpeg{mux=flv},dst=:8080/}"]
+    args: ["frozen.mp4","--loop","--sout", "#transcode{scodec=none}:http{mux=ffmpeg{mux=flv},dst=:8080/}"]
+  nodeSelector:
+    kubernetes.io/hostname: worker2

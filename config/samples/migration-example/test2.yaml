@@ -31,4 +31,4 @@ spec:
           protocol: TCP
         #args: ["big_buck_bunny.mp4","--loop","--sout", "#transcode{scodec=none}:http{mux=ffmpeg{mux=flv},dst=:8080/}"]
       nodeSelector:
-        kubernetes.io/hostname: worker1
+        kubernetes.io/hostname: worker2

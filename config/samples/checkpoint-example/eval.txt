@@ -1,0 +1,34 @@
+# RUBY application
+dcn@dcn:~/podmigration-operator/config/samples/checkpoint-example$ bash test2.sh
+pod/red created
+
+real    0m5.245s
+user    0m0.121s
+sys     0m0.085s
+pod "red" deleted
+dcn@dcn:~/podmigration-operator/config/samples/checkpoint-example$ kubectl get pods
+No resources found in default namespace.
+dcn@dcn:~/podmigration-operator/config/samples/checkpoint-example$ bash test.sh
+pod/tuongvx created
+
+real    0m40.275s
+user    0m23.235s
+sys     0m9.541s
+
+# Redmine application
+dcn@dcn:~/podmigration-operator/config/samples/checkpoint-example$ bash test.sh
+pod/tuongvx created
+
+real    0m12.536s
+user    0m4.649s
+sys     0m1.916s
+Operation cannot be fulfilled on pods "tuongvx": the object has been modified; please apply your changes to the latest version and try again
+pod "tuongvx" deleted
+
+dcn@dcn:~/podmigration-operator/config/samples/checkpoint-example$ bash test2.sh
+pod/red created
+
+real    0m6.345s
+user    0m0.146s
+sys     0m0.072s
+pod "red" deleted

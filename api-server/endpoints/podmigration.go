@@ -58,11 +58,8 @@ func (pe *PodmigrationEndpoint) create(request *restful.Request, response *restf
 	pm := new(Podmigration)
 	err := request.ReadEntity(pm)
 	pm.Action = strings.ToLower(pm.Action)
+	// fmt.Println("Calling an action: - %v", pm.Action)
 	fmt.Println(pm)
-	fmt.Println(pm.Action)
-	fmt.Println(pm.SourcePod)
-	fmt.Println(pm)
-	fmt.Println("what the hell")
 	if err != nil {
 		writeError(response, 400, Error{
 			Title:   "Bad Request",
@@ -149,10 +146,11 @@ func (pe *PodmigrationEndpoint) create(request *restful.Request, response *restf
 		ObjectMeta: metav1.ObjectMeta{Name: pm.Name, Namespace: "default"},
 		Spec: v1.PodmigrationSpec{
 			Replicas:     pm.Replicas,
+			SourcePod:    pm.SourcePod,
+			DestHost:     pm.DestHost,
 			Selector:     pm.Selector,
 			Action:       pm.Action,
 			SnapshotPath: pm.SnapshotPath,
-			SourcePod:    pm.SourcePod,
 			Template:     template,
 		},
 	}
