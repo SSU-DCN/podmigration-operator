@@ -114,7 +114,9 @@ After all, run ```make```, and you can find the binaries somewhere in the direct
 2. The kubelet and kubeadm binaries can be found in this folder.
 ```
 $ git clone https://github.com/SSU-DCN/podmigration-operator.git
-$ cd podmigration-operator/custom-binaries
+$ cd podmigration-operator
+$ tar -vxf binaries.tar.bz2
+$ cd custom-binaries
 ```
 - After downloading/building the kubelet and kubeadm binaries, replace it with existing default K8s-kubelet binaries:
 ```
