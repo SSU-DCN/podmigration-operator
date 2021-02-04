@@ -51,7 +51,7 @@ $ wget https://github.com/opencontainers/runc/releases/download/v1.0.0-rc92/runc
 $ whereis runc
 $ sudo mv runc.amd64 runc
 $ chmod +x runc
-$ sudo mv runc usr/local/bin/
+$ sudo mv runc /usr/local/bin/
 ```
 - Configure containerd and create the containerd.service systemd unit file
 ```
