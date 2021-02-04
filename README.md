@@ -1,5 +1,6 @@
 # podmigration-operator
-
+## The documents to init K8s cluster,which enable Podmigration, can be found at: 
+- https://github.com/SSU-DCN/podmigration-operator/blob/main/init-cluster-containerd-CRIU.md
 ## Kubebuilder init command
 ```
 kubebuilder init --domain dcn.ssu.ac.kr
@@ -9,13 +10,18 @@ kubebuilder create api --group podmig --version v1 --kind Podmigration
 ```
 
 ## How to run:
-* To run operator:
+* To run Podmigration operator, which include CRD and custom controller:
 ```
-make run
+$ make run
 ```
-* To run api-server :
+* To run api-server, which enable ```kubectl migrate``` command and GUI:
 ```
-go run ./api-server/cmd/main.go
+$ go run ./api-server/cmd/main.go
+```
+* To run GUI:
+```
+$ cd podmigration-operator/gui
+$ npm run serve
 ```
 ## Test live-migrate pod:
 * Run/check video-stream application:
