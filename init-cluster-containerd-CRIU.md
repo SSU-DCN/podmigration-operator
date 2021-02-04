@@ -29,6 +29,9 @@ $ sudo mv containerd /bin/
 ```
 $ cd containerd/
 $ wget https://k8s-pod-migration.obs.eu-de.otc.t-systems.com/v2/containerd
+$ git clone https://github.com/SSU-DCN/podmigration-operator.git
+$ cd podmigration-operator
+$ tar -vxf binaries.tar.bz2
 $ chmod +x containerd
 $ sudo mv containerd /bin/
 ```
@@ -103,7 +106,6 @@ $ curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key a
 $ sudo apt-add-repository "deb http://apt.kubernetes.io/ kubernetes-xenial main"
 $ sudo apt-get install kubeadm=1.19.0-00 kubelet=1.19.0-00 kubectl=1.19.0-00 -y
 $ whereis kubeadm
-$ whereis kubele
 $ whereis kubelet
 ```
 ### Step5: Replace kubelet with the custom kubelet. There are two options:
