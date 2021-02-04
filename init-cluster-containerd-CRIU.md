@@ -89,7 +89,9 @@ $ sudo nano /etc/sysctl.conf
 ...
 net.bridge.bridge-nf-call-iptables = 1
 
+$ sudo -s
 $ sudo echo '1' > /proc/sys/net/ipv4/ip_forward
+$ exit
 $ sudo sysctl --system
 $ sudo modprobe overlay
 $ sudo modprobe br_netfilter
