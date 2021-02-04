@@ -1,5 +1,5 @@
 # podmigration-operator
-## The documents to init K8s cluster,which enable Podmigration, can be found at: 
+## The document to init K8s cluster, which enables Podmigration, can be found at: 
 - https://github.com/SSU-DCN/podmigration-operator/blob/main/init-cluster-containerd-CRIU.md
 ## Kubebuilder init command
 ```
