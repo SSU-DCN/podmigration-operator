@@ -10,8 +10,8 @@ $ sudo cp kubectl-checkpoint /usr/local/bin
 * To build migrate command:
 ```
 $ cd migrate-command
-$ go build -o migrate-command
-$ sudo cp migrate-command /usr/local/bin
+$ go build -o kubectl-migrate
+$ sudo cp kubectl-migrate /usr/local/bin
 ```
 ### How to use the checkpoint/migrate commands:
 * To run the checkpoint command:
