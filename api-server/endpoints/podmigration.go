@@ -58,6 +58,8 @@ func (pe *PodmigrationEndpoint) create(request *restful.Request, response *restf
 	pm := new(Podmigration)
 	err := request.ReadEntity(pm)
 	pm.Action = strings.ToLower(pm.Action)
+	labelSelector := metav1.LabelSelector{MatchLabels: map[string]string{"podmig": "dcn"}}
+	pm.Selector = &labelSelector
 	// fmt.Println("Calling an action: - %v", pm.Action)
 	fmt.Println(pm)
 	if err != nil {
