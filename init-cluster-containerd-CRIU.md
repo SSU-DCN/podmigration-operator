@@ -1,8 +1,9 @@
 ## This document guides how to bootstrap Kubernetes cluster without Docker and enable CRIU intergration for Podmigration feature.
 ### Step0: 
 - Ubuntu 18.04
-- Do step 1-5 in every node.
-- Do step 6 in controller node.
+- Do step 1-6 at all nodes.
+- Do step 7 at controller node.
+- Do step 8 at each worker nodes
 ### Step1: Install container runtime - Containerd
 - Download containerd and unpackage:
 ```
@@ -32,6 +33,7 @@ $ wget https://k8s-pod-migration.obs.eu-de.otc.t-systems.com/v2/containerd
 $ git clone https://github.com/SSU-DCN/podmigration-operator.git
 $ cd podmigration-operator
 $ tar -vxf binaries.tar.bz2
+$ cd custom-binaries/
 $ chmod +x containerd
 $ sudo mv containerd /bin/
 ```
@@ -130,7 +132,16 @@ $ sudo systemctl daemon-reload
 $ sudo systemctl restart kubelet
 $ sudo systemctl status kubelet
 ```
-### Step6: Init k8s-cluster. 
+### Step7: You may need to change kubelet.config mode.
+```
+$ sudo nano /var/lib/kubelet/config.yaml
+
+authorization:
+  #mode: Webhook
+  mode: AlwaysAllow
+```
+
+### Step7: Init k8s-cluster. 
 - In the master node run following command:
 ```
 $ sudo kubeadm init --pod-network-cidr=10.244.0.0/16
@@ -157,5 +168,34 @@ Feb 04 05:55:21 tuong-worker1 kubelet[26650]: I0204 05:55:21.979185   26650 kube
 Feb 04 05:55:25 tuong-worker1 kubelet[26650]: I0204 05:55:25.979207   26650 kuberuntime_manager.go:841] Should we migrate?Runningfalse
 
 ```
+### Step8: Install CRIU.
+```
+$ git clone https://github.com/SSU-DCN/podmigration-operator.git
+$ cd podmigration-operator
+$ tar -vxf criu-3.14.tar.bz2
+$ cd criu-3.14
+$ sudo apt-get install protobuf-c-compiler libprotobuf-c0-dev protobuf-compiler \
+libprotobuf-dev:amd64 gcc build-essential bsdmainutils python git-core \
+asciidoc make htop git curl supervisor cgroup-lite libapparmor-dev \
+libseccomp-dev libprotobuf-dev libprotobuf-c0-dev protobuf-c-compiler \
+protobuf-compiler python-protobuf libnl-3-dev libcap-dev libaio-dev \
+apparmor libnet1-dev libnl-genl-3-dev libnl-route-3-dev libnfnetlink-dev pkg-config
+
+$ make clean
+$ make
+$ sudo make install
+$ criu check
+$ criu check --all
+
+$ mkdir /etc/criu
+$ touch /etc/criu/runc.conf
+$ nano /etc/criu/runc.conf
+tcp-established
+tcp-close
+```
+
+
+
+
 
 

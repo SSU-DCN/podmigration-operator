@@ -12,6 +12,10 @@ kubebuilder create api --group podmig --version v1 --kind Podmigration
 ## How to run:
 * To run Podmigration operator, which include CRD and custom controller:
 ```
+$ make manifests
+$ sudo snap install kustomize
+$ sudo apt-get install gcc
+$ make install
 $ make run
 ```
 * To run api-server, which enable ```kubectl migrate``` command and GUI:
@@ -21,12 +25,13 @@ $ go run ./api-server/cmd/main.go
 * To run GUI:
 ```
 $ cd podmigration-operator/gui
+$ npm install
 $ npm run serve
 ```
 ## Test live-migrate pod:
 * Run/check video-stream application:
 ```
-$ cd podmigration-operator/config/samples
+$ cd podmigration-operator/config/samples/migration-example
 $ kubectl apply -f 2.yaml
 $ kubectl get pods
 ```

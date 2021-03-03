@@ -4,6 +4,9 @@
 ```
 npm install
 ```
+### Note: You might need to install specific version:
+sudo npm install -g npm@2.1.7
+```
 
 ### Compiles and hot-reloads for development
 ```
