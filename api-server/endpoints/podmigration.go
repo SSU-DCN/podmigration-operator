@@ -80,8 +80,7 @@ func (pe *PodmigrationEndpoint) create(request *restful.Request, response *restf
 
 	// Check whether sourcePod of live-migration is exist or not
 	var sourcePod *corev1.Pod
-	var template corev1.PodTemplateSpec
-	// if pm.Action == "live-migration" && pm.SourcePod != "" {
+	// var template corev1.PodTemplateSpec
 	if pm.SourcePod != "" {
 		fmt.Println(pm.SourcePod)
 		var childPods corev1.PodList
@@ -92,58 +91,23 @@ func (pe *PodmigrationEndpoint) create(request *restful.Request, response *restf
 			})
 			return
 		}
-
 		if len(childPods.Items) > 0 {
 			for _, pod := range childPods.Items {
 				if pod.Name == pm.SourcePod && pod.Status.Phase == "Running" {
 					sourcePod = pod.DeepCopy()
-					container := sourcePod.Spec.Containers[0]
-					template = corev1.PodTemplateSpec{
-						ObjectMeta: sourcePod.ObjectMeta,
-						Spec: corev1.PodSpec{
-							Containers: []corev1.Container{
-								{
-									Name:  container.Name,
-									Image: container.Image,
-									Ports: container.Ports,
-								},
-							},
-						},
-					}
-					if pm.DestHost != "" {
-						template.Spec.NodeSelector = map[string]string{"kubernetes.io/hostname": pm.DestHost}
-					}
 				}
 			}
 		}
-		if sourcePod == nil {
-			writeError(response, 400, Error{
-				Title:   "Bad Request",
-				Details: "Could not find sourcePod for migration",
-			})
-			return
-		}
-	} else {
-		template = corev1.PodTemplateSpec{
-			ObjectMeta: metav1.ObjectMeta{
-				Labels: map[string]string{"app": "redis"},
-			},
-			Spec: corev1.PodSpec{
-				Containers: []corev1.Container{
-					{
-						Name:  "redis",
-						Image: "redis",
-						Ports: []corev1.ContainerPort{
-							{ContainerPort: 6379, Protocol: "TCP"},
-						},
-					},
-				},
-			},
-		}
 	}
-	fmt.Println(template)
-	// fmt.Println(pm.DestHost)
-	// fmt.Println(template.Spec.NodeSelector)
+
+	if sourcePod == nil {
+		writeError(response, 400, Error{
+			Title:   "Bad Request",
+			Details: "Could not find sourcePod for migration",
+		})
+		return
+	}
+
 	obj := &v1.Podmigration{
 		ObjectMeta: metav1.ObjectMeta{Name: pm.Name, Namespace: "default"},
 		Spec: v1.PodmigrationSpec{
@@ -153,7 +117,7 @@ func (pe *PodmigrationEndpoint) create(request *restful.Request, response *restf
 			Selector:     pm.Selector,
 			Action:       pm.Action,
 			SnapshotPath: pm.SnapshotPath,
-			Template:     template,
+			// Template:     template,
 		},
 	}
 	err = pe.client.Create(request.Request.Context(), obj, &client.CreateOptions{})

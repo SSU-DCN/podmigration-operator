@@ -1,0 +1,39 @@
+# apiVersion: podmig.dcn.ssu.ac.kr/v1
+# kind: Podmigration
+# metadata:
+#   name: podmigration-sample
+# spec:
+#   # Add fields here
+#   foo: bar
+apiVersion: podmig.dcn.ssu.ac.kr/v1
+kind: Podmigration
+metadata:
+  name: test
+  labels:
+    name: test
+spec:
+  replicas: 1
+  action: restore
+  # snapshotPath is a path which include checkpoint infomation of a pod
+  # There are two ways create a checkpoint:
+      # 1. Ref to podmigration-operator/config/samples/checkpoint-example/checkpoint_example.yaml to see how to checkpoint a running pod by given template
+      # 2. Ref to podmigration-operator/tree/main/kubectl-plugin to see how to checkpoint a running pod by command #kubectl checkpoint 
+  snapshotPath: /var/lib/kubelet/migration/ctconf2020/simple
+  # sourcePod: simple
+  destHost: worker2
+  selector:
+    podmig: dcn
+  # When restore a number of pods from existing checkpoint infomation, a pre-template should be defined to pre-create a new pod first, then the checkpoint info will be loaded
+  template:
+    metadata:
+      name: simple
+      labels:
+        name: simple
+    spec:
+      containers:
+      - name: count
+        image: alpine
+        ports:
+        - containerPort: 80
+          protocol: TCP
+ 

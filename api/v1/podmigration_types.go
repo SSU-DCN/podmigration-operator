@@ -30,21 +30,20 @@ type PodmigrationSpec struct {
 	// Number of desired pods. This is a pointer to distinguish between explicit
 	// zero and not specified. Defaults to 1.
 	// +optional
-	Replicas  int    `json:"replicas,omitempty"`
-	SourcePod string `json:"sourcePod"`
-	DestHost  string `json:"destHost"`
+	Replicas     int    `json:"replicas,omitempty"`
+	SourcePod    string `json:"sourcePod,omitempty"`
+	DestHost     string `json:"destHost,omitempty"`
+	SnapshotPath string `json:"snapshotPath,omitempty"`
+
 	// Label selector for pods. Existing ReplicaSets whose pods are
 	// selected by this will be the ones affected by this deployment.
 	// It must match the pod template's labels.
-	Selector *metav1.LabelSelector `json:"selector"`
+	Selector *metav1.LabelSelector  `json:"selector"`
+	Template corev1.PodTemplateSpec `json:"template,omitempty"`
 
 	// Template describes the pods that will be created.
 	// +kubebuilder:validation:Required
-	Action       string `json:"action"`
-	SnapshotPath string `json:"snapshotPath"`
-
-	Template corev1.PodTemplateSpec `json:"template"`
-
+	Action string `json:"action"`
 	// ExcludeNode indicates a node that the Pod should not get scheduled on or get migrated
 	// away from.
 	// +kubebuilder:validation:Optional

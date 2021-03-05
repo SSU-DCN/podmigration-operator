@@ -5914,11 +5914,7 @@ spec:
               type: object
           required:
           - action
-          - destHost
           - selector
-          - snapshotPath
-          - sourcePod
-          - template
           type: object
         status:
           description: PodmigrationStatus defines the observed state of Podmigration

@@ -13,24 +13,9 @@ metadata:
     name: test
 spec:
   replicas: 1
-  template:
-    metadata:
-      labels:
-        app: redis
-      annotations:
-        snapshotPolicy: "restore"
-        snapshotPath: "/var/lib/kubelet/migration/ctconf2020"
-        #sourcePod: "test-7f66c57c86-6gfdm"
-    spec:
-      containers:
-      - name: redis
-        image: redis
-        ports:
-        - containerPort: 6379
-          protocol: TCP
-        resources:
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
-      nodeSelector:
-        kubernetes.io/hostname: worker1 
+  action: "live-migration"
+  snapshotPath: /var/lib/kubelet/migration
+  sourcePod: redis
+  destHost: worker2
+  selector:
+    podmig: dcn

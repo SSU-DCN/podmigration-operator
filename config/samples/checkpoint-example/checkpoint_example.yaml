@@ -13,22 +13,10 @@ metadata:
     name: test
 spec:
   replicas: 1
-  action: "checkpoint"
-  snapshotPath: "/var/lib/kubelet/migration/ctconf2020"
-  template:
-    metadata:
-      labels:
-        app: redis
-    spec:
-      containers:
-      - name: redis
-        image: redis
-        ports:
-        - containerPort: 6379
-          protocol: TCP
-        resources:
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
-      nodeSelector:
-        kubernetes.io/hostname: worker1 
+  action: checkpoint
+  # sourcePod is name of a running Pod in the system
+  sourcePod: simple
+  # snapshotPath is a path where the checkpoint information will be store
+  snapshotPath: /var/lib/kubelet/migration/ctconf2020
+  selector:
+    podmig: dcn

@@ -20,4 +20,4 @@ spec:
         memory: "128Mi"
         cpu: "600m"
   nodeSelector:
-    kubernetes.io/hostname: worker2
+    kubernetes.io/hostname: worker1

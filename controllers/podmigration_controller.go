@@ -66,11 +66,25 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 	log.Info("", "print test", migratingPod.Spec)
+	var template *corev1.PodTemplateSpec
+	if migratingPod.Spec.Template.ObjectMeta.Name != "" {
+		template = &migratingPod.Spec.Template
+	} else {
+		var Err error
+		template, Err = r.getSourcePodTemplate(ctx, migratingPod.Spec.SourcePod, req.Namespace)
+		if Err != nil || template == nil {
+			log.Error(Err, "sourcePod not exist", "pod", migratingPod.Spec.SourcePod)
+			return ctrl.Result{}, Err
+		}
+	}
 
-	template := &migratingPod.Spec.Template
+	if migratingPod.Spec.DestHost != "" {
+		template.Spec.NodeSelector = map[string]string{"kubernetes.io/hostname": migratingPod.Spec.DestHost}
+	}
+
 	desiredLabels := getPodsLabelSet(template)
 	desiredLabels["migratingPod"] = migratingPod.Name
-	annotations := getPodsAnnotationSet(&migratingPod)
+	annotations := getPodsAnnotationSet(&migratingPod, template)
 
 	// Then list all pods controlled by the Podmigration resource object
 	var childPods corev1.PodList
@@ -79,12 +93,12 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		return ctrl.Result{}, err
 	}
 
-	pod, err := r.desiredPod(migratingPod, &migratingPod, req.Namespace)
+	pod, err := r.desiredPod(migratingPod, &migratingPod, req.Namespace, template)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	depl, err := r.desiredDeployment(migratingPod, &migratingPod, req.Namespace)
+	depl, err := r.desiredDeployment(migratingPod, &migratingPod, req.Namespace, template)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -327,6 +341,30 @@ func (r *PodmigrationReconciler) checkPodExist(ctx context.Context, name, namesp
 	}
 	return nil, nil
 }
+
+func (r *PodmigrationReconciler) getSourcePodTemplate(ctx context.Context, sourcePodName string, namespace string) (*corev1.PodTemplateSpec, error) {
+	sourcePod, err := r.checkPodExist(ctx, sourcePodName, namespace)
+	if sourcePod == nil {
+		return nil, err
+	}
+	//(TODO: TuongVX): Get template of pod with multiple containers
+	pod := sourcePod.DeepCopy()
+	container := pod.Spec.Containers[0]
+	template := &corev1.PodTemplateSpec{
+		ObjectMeta: pod.ObjectMeta,
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:  container.Name,
+					Image: container.Image,
+					Ports: container.Ports,
+				},
+			},
+		},
+	}
+	return template, nil
+}
+
 func (r *PodmigrationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	ctx := context.Background()
 	if err := mgr.GetFieldIndexer().IndexField(ctx, &corev1.Pod{}, podOwnerKey, func(raw runtime.Object) []string {

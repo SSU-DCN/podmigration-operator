@@ -13,11 +13,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func (r *PodmigrationReconciler) desiredPod(migratingPod podmigv1.Podmigration, parentObject runtime.Object, namespace string) (*corev1.Pod, error) {
-	template := &migratingPod.Spec.Template
+func (r *PodmigrationReconciler) desiredPod(migratingPod podmigv1.Podmigration, parentObject runtime.Object, namespace string, template *corev1.PodTemplateSpec) (*corev1.Pod, error) {
+	// template := &migratingPod.Spec.Template
 	desiredLabels := getPodsLabelSet(template)
 	desiredFinalizers := getPodsFinalizers(template)
-	desiredAnnotations := getPodsAnnotationSet(&migratingPod)
+	desiredAnnotations := getPodsAnnotationSet(&migratingPod, template)
 	accessor, _ := meta.Accessor(parentObject)
 	prefix := getPodsPrefix(accessor.GetName())
 	pod := &corev1.Pod{
@@ -36,11 +36,11 @@ func (r *PodmigrationReconciler) desiredPod(migratingPod podmigv1.Podmigration, 
 	return pod, nil
 }
 
-func (r *PodmigrationReconciler) desiredDeployment(migratingPod podmigv1.Podmigration, parentObject runtime.Object, namespace string) (*appsv1.Deployment, error) {
-	template := &migratingPod.Spec.Template
+func (r *PodmigrationReconciler) desiredDeployment(migratingPod podmigv1.Podmigration, parentObject runtime.Object, namespace string, template *corev1.PodTemplateSpec) (*appsv1.Deployment, error) {
+	// template := &migratingPod.Spec.Template
 	desiredLabels := getPodsLabelSet(template)
 	desiredFinalizers := getPodsFinalizers(template)
-	desiredAnnotations := getPodsAnnotationSet(&migratingPod)
+	desiredAnnotations := getPodsAnnotationSet(&migratingPod, template)
 	accessor, _ := meta.Accessor(parentObject)
 	prefix := getPodsPrefix(accessor.GetName())
 	podSpec := *template.Spec.DeepCopy()
@@ -89,8 +89,8 @@ func getPodsFinalizers(template *corev1.PodTemplateSpec) []string {
 	return desiredFinalizers
 }
 
-func getPodsAnnotationSet(migratingPod *podmigv1.Podmigration) labels.Set {
-	template := &migratingPod.Spec.Template
+func getPodsAnnotationSet(migratingPod *podmigv1.Podmigration, template *corev1.PodTemplateSpec) labels.Set {
+	// template := &migratingPod.Spec.Template
 	desiredAnnotations := make(labels.Set)
 	for k, v := range template.Annotations {
 		desiredAnnotations[k] = v
