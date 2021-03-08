@@ -8,7 +8,7 @@ import (
 	v1 "github.com/SSU-DCN/podmigration-operator/api/v1"
 	"github.com/emicklei/go-restful"
 
-	// corev1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -17,15 +17,15 @@ type Endpoint interface {
 }
 
 type Podmigration struct {
-	Name         string                `json:"name"`
-	DestHost     string                `json:"destHost"`
-	Replicas     int                   `json:"replicas"`
-	Selector     *metav1.LabelSelector `json:"selector"`
-	Action       string                `json:"action"`
-	SnapshotPath string                `json:"snapshotPath"`
-	SourcePod    string                `json:"sourcePod"`
-	// Template corev1.PodTemplateSpec `json:"template"`
-	Status *v1.PodmigrationStatus `json:"status,omitempty"`
+	Name         string                 `json:"name"`
+	DestHost     string                 `json:"destHost"`
+	Replicas     int                    `json:"replicas"`
+	Selector     *metav1.LabelSelector  `json:"selector"`
+	Action       string                 `json:"action"`
+	SnapshotPath string                 `json:"snapshotPath"`
+	SourcePod    string                 `json:"sourcePod"`
+	Template     corev1.PodTemplateSpec `json:"template,omitempty"`
+	Status       *v1.PodmigrationStatus `json:"status,omitempty"`
 }
 
 func (pm *Podmigration) Validate() error {

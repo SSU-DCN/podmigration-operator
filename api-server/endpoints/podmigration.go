@@ -60,6 +60,11 @@ func (pe *PodmigrationEndpoint) create(request *restful.Request, response *restf
 	pm.Action = strings.ToLower(pm.Action)
 	labelSelector := metav1.LabelSelector{MatchLabels: map[string]string{"podmig": "dcn"}}
 	pm.Selector = &labelSelector
+	pm.Template = corev1.PodTemplateSpec{
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{},
+		},
+	}
 	// fmt.Println("Calling an action: - %v", pm.Action)
 	fmt.Println(pm)
 	if err != nil {
@@ -107,7 +112,6 @@ func (pe *PodmigrationEndpoint) create(request *restful.Request, response *restf
 		})
 		return
 	}
-
 	obj := &v1.Podmigration{
 		ObjectMeta: metav1.ObjectMeta{Name: pm.Name, Namespace: "default"},
 		Spec: v1.PodmigrationSpec{
@@ -117,7 +121,7 @@ func (pe *PodmigrationEndpoint) create(request *restful.Request, response *restf
 			Selector:     pm.Selector,
 			Action:       pm.Action,
 			SnapshotPath: pm.SnapshotPath,
-			// Template:     template,
+			Template:     pm.Template,
 		},
 	}
 	err = pe.client.Create(request.Request.Context(), obj, &client.CreateOptions{})
