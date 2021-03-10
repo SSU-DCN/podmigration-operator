@@ -146,7 +146,7 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		for {
 			_, err := os.Stat(path.Join(checkpointPath, container, "descriptors.json"))
 			if os.IsNotExist(err) {
-				time.Sleep(1000 * time.Millisecond)
+				time.Sleep(100 * time.Millisecond)
 			} else {
 				break
 			}
@@ -162,6 +162,15 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		}
 		log.Info("", "Live-migration", "Step 4 - Restore destPod from sourcePod's checkpointed info - completed")
 		// time.Sleep(5)
+		for {
+			status, _ := r.checkPodExist(ctx, newPod.Name, req.Namespace)
+			if status != nil {
+				break
+			} else {
+				time.Sleep(200 * time.Millisecond)
+			}
+		}
+		log.Info("", "Live-migration", "Step 4.1 - Check whether if newPod is Running or not - completed")
 		// Step5: Clean checkpointpod process and checkpointPath
 		if err := r.removeCheckpointPod(ctx, sourcePod, "/var/lib/kubelet/migration/kkk", newPod.Name, req.Namespace); err != nil {
 			log.Error(err, "unable to remove checkpoint", "pod", sourcePod)
@@ -355,11 +364,13 @@ func (r *PodmigrationReconciler) getSourcePodTemplate(ctx context.Context, sourc
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
-					Name:  container.Name,
-					Image: container.Image,
-					Ports: container.Ports,
+					Name:         container.Name,
+					Image:        container.Image,
+					Ports:        container.Ports,
+					VolumeMounts: container.VolumeMounts,
 				},
 			},
+			Volumes: pod.Spec.Volumes,
 		},
 	}
 	return template, nil
