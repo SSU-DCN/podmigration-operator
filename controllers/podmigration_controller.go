@@ -59,6 +59,8 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 	ctx := context.Background()
 	log := r.Log.WithValues("podmigration", req.NamespacedName)
 
+	// output := r.changeContext("cluster2")
+	// log.Info("", "print test", output)
 	// your logic here
 	// Load the podMigration resource object, if there is no Object, return directly
 	var migratingPod podmigv1.Podmigration
@@ -193,10 +195,21 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 			pod.ObjectMeta.Annotations["snapshotPolicy"] = ""
 			pod.ObjectMeta.Annotations["snapshotPath"] = ""
 		}
-		if err := r.createMultiPod(ctx, migratingPod.Spec.Replicas, depl); err != nil {
-			log.Error(err, "unable to create Pod for restore", "pod", pod)
-			return ctrl.Result{}, err
+		// If the snapshotPath have'nt set yet, it mean multi-cluster pod migration
+		if annotations["snapshotPath"] == "" {
+			snapshotPath := path.Join("/var/lib/kubelet/migration/kkk", annotations["sourcePod"])
+			_, err := r.restorePod(ctx, pod, annotations["sourcePod"], snapshotPath)
+			if err != nil {
+				log.Error(err, "unable to restore", "pod", annotations["sourcePod"])
+				return ctrl.Result{}, err
+			}
+		} else {
+			if err := r.createMultiPod(ctx, migratingPod.Spec.Replicas, depl); err != nil {
+				log.Error(err, "unable to create Pod for restore", "pod", pod)
+				return ctrl.Result{}, err
+			}
 		}
+
 		log.Info("", "Restore", "Step 0 - Create multiple pods from checkpoint infomation - completed")
 	} else if count != 0 && count != migratingPod.Spec.Replicas {
 		_, err := os.Stat(annotations["snapshotPath"])
@@ -359,9 +372,12 @@ func (r *PodmigrationReconciler) getSourcePodTemplate(ctx context.Context, sourc
 	//(TODO: TuongVX): Get template of pod with multiple containers
 	pod := sourcePod.DeepCopy()
 	container := pod.Spec.Containers[0]
+	automountServiceAccountToken := false
 	template := &corev1.PodTemplateSpec{
 		ObjectMeta: pod.ObjectMeta,
 		Spec: corev1.PodSpec{
+			ServiceAccountName:           "default",
+			AutomountServiceAccountToken: &automountServiceAccountToken,
 			Containers: []corev1.Container{
 				{
 					Name:         container.Name,
@@ -374,6 +390,11 @@ func (r *PodmigrationReconciler) getSourcePodTemplate(ctx context.Context, sourc
 		},
 	}
 	return template, nil
+}
+
+func (r *PodmigrationReconciler) changeContext(cluster string) string {
+	output, _ := exec.Command("kubectl", "config", "use-context", cluster).Output()
+	return string(output)
 }
 
 func (r *PodmigrationReconciler) SetupWithManager(mgr ctrl.Manager) error {

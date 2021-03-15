@@ -60,13 +60,7 @@ func (pe *PodmigrationEndpoint) create(request *restful.Request, response *restf
 	pm.Action = strings.ToLower(pm.Action)
 	labelSelector := metav1.LabelSelector{MatchLabels: map[string]string{"podmig": "dcn"}}
 	pm.Selector = &labelSelector
-	pm.Template = corev1.PodTemplateSpec{
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{},
-		},
-	}
-	// fmt.Println("Calling an action: - %v", pm.Action)
-	fmt.Println(pm)
+	fmt.Println("Calling an action: - ", pm.Action)
 	if err != nil {
 		writeError(response, 400, Error{
 			Title:   "Bad Request",
@@ -84,10 +78,10 @@ func (pe *PodmigrationEndpoint) create(request *restful.Request, response *restf
 	}
 
 	// Check whether sourcePod of live-migration is exist or not
-	var sourcePod *corev1.Pod
+	// var sourcePod *corev1.Pod
 	// var template corev1.PodTemplateSpec
 	if pm.SourcePod != "" {
-		fmt.Println(pm.SourcePod)
+		// fmt.Println(pm.SourcePod)
 		var childPods corev1.PodList
 		if err := pe.client.List(request.Request.Context(), &childPods, client.InNamespace(namespace)); err != nil {
 			writeError(response, 400, Error{
@@ -96,22 +90,22 @@ func (pe *PodmigrationEndpoint) create(request *restful.Request, response *restf
 			})
 			return
 		}
-		if len(childPods.Items) > 0 {
-			for _, pod := range childPods.Items {
-				if pod.Name == pm.SourcePod && pod.Status.Phase == "Running" {
-					sourcePod = pod.DeepCopy()
-				}
-			}
-		}
+		// if len(childPods.Items) > 0 {
+		// 	for _, pod := range childPods.Items {
+		// 		if pod.Name == pm.SourcePod && pod.Status.Phase == "Running" {
+		// 			sourcePod = pod.DeepCopy()
+		// 		}
+		// 	}
+		// }
 	}
 
-	if sourcePod == nil {
-		writeError(response, 400, Error{
-			Title:   "Bad Request",
-			Details: "Could not find sourcePod for migration",
-		})
-		return
-	}
+	// if sourcePod == nil {
+	// 	writeError(response, 400, Error{
+	// 		Title:   "Bad Request",
+	// 		Details: "Could not find sourcePod for migration",
+	// 	})
+	// 	return
+	// }
 	obj := &v1.Podmigration{
 		ObjectMeta: metav1.ObjectMeta{Name: pm.Name, Namespace: "default"},
 		Spec: v1.PodmigrationSpec{

@@ -25,6 +25,8 @@ type Podmigration struct {
 	SnapshotPath string                 `json:"snapshotPath"`
 	SourcePod    string                 `json:"sourcePod"`
 	Template     corev1.PodTemplateSpec `json:"template,omitempty"`
+	FromCluster  string                 `json:"fromCluster,omitempty"`
+	ToCluster    string                 `json:"toCluster,omitempty"`
 	Status       *v1.PodmigrationStatus `json:"status,omitempty"`
 }
 

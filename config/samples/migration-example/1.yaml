@@ -8,6 +8,8 @@ metadata:
     #snapshotPolicy: "checkpoint"
     #snapshotPath: "/var/lib/kubelet/migration/abc"
 spec:
+  serviceAccountName: default
+  automountServiceAccountToken: false
   containers:
   - name: count
     image: alpine
@@ -20,4 +22,4 @@ spec:
         memory: "128Mi"
         cpu: "600m"
   nodeSelector:
-    kubernetes.io/hostname: worker1
+    kubernetes.io/hostname: cluster1-worker1
