@@ -195,21 +195,33 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 			pod.ObjectMeta.Annotations["snapshotPolicy"] = ""
 			pod.ObjectMeta.Annotations["snapshotPath"] = ""
 		}
-		// If the snapshotPath have'nt set yet, it mean multi-cluster pod migration
+		// If the snapshotPath have'nt set yet, it means multi-cluster pod migration
 		if annotations["snapshotPath"] == "" {
 			snapshotPath := path.Join("/var/lib/kubelet/migration/kkk", annotations["sourcePod"])
-			_, err := r.restorePod(ctx, pod, annotations["sourcePod"], snapshotPath)
+			newPod, err := r.restorePod(ctx, pod, annotations["sourcePod"], snapshotPath)
 			if err != nil {
 				log.Error(err, "unable to restore", "pod", annotations["sourcePod"])
 				return ctrl.Result{}, err
 			}
+			// wait until the destPod at destCluster is restored
+			for {
+				status, _ := r.checkPodExist(ctx, newPod.Name, req.Namespace)
+				if status != nil {
+					log.Info("", "Restore", status.Status.Phase)
+					break
+				} else {
+					time.Sleep(100 * time.Millisecond)
+				}
+			}
+			// create a folder to announce that the restore process was completed
+			completed := path.Join("/var/lib/kubelet/migration/completed")
+			_ = os.Mkdir(completed, 0777)
 		} else {
 			if err := r.createMultiPod(ctx, migratingPod.Spec.Replicas, depl); err != nil {
 				log.Error(err, "unable to create Pod for restore", "pod", pod)
 				return ctrl.Result{}, err
 			}
 		}
-
 		log.Info("", "Restore", "Step 0 - Create multiple pods from checkpoint infomation - completed")
 	} else if count != 0 && count != migratingPod.Spec.Replicas {
 		_, err := os.Stat(annotations["snapshotPath"])
@@ -232,7 +244,7 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 				log.Error(err, "sourcePod not exist", "pod", annotations["sourcePod"])
 				return ctrl.Result{}, err
 			}
-			log.Info("", "Checkpoint", "Step 1 - Check the snapshotPaht is exist or not - completed")
+			log.Info("", "Checkpoint", "Step 1 - Check the snapshotPath is exist or not - completed")
 			// Step2: Clean previous checkpoint folder if exist
 			if err := r.removeCheckpointPod(ctx, sourcePod, annotations["snapshotPath"], "", req.Namespace); err != nil {
 				log.Error(err, "unable to remove checkpoint", "pod", sourcePod)
@@ -245,6 +257,25 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 				return ctrl.Result{}, err
 			}
 			log.Info("", "Checkpoint", "Step 3 - Checkpoint source Pod and save it - completed")
+			// // If the snapshotPath have'nt set yet, it mean multi-cluster pod migration
+			log.Info("", "Checkpoint", annotations["snapshotPath"])
+			if annotations["snapshotPath"] == "" {
+				//Wait until see the completed trigger anounce, then remove sourcePod and clean checkpoint Path
+				for {
+					_, err := os.Stat("/var/lib/kubelet/migration/completed")
+					if os.IsNotExist(err) {
+						time.Sleep(100 * time.Millisecond)
+						log.Info("", "Checkpoint", "Step 3.0 - waiting for pod is restored at new Cluster")
+					} else {
+						break
+					}
+				}
+				if err := r.deleteSourcePod(ctx, sourcePod, "/var/lib/kubelet/migration/kkk"); err != nil {
+					log.Error(err, "unable to remove checkpoint", "pod", sourcePod)
+					return ctrl.Result{}, err
+				}
+				log.Info("", "Checkpoint", "Step 3.1 - delete sourcePod and clean checkpointPath - completed")
+			}
 		}
 	}
 	return ctrl.Result{}, nil
@@ -395,6 +426,20 @@ func (r *PodmigrationReconciler) getSourcePodTemplate(ctx context.Context, sourc
 func (r *PodmigrationReconciler) changeContext(cluster string) string {
 	output, _ := exec.Command("kubectl", "config", "use-context", cluster).Output()
 	return string(output)
+}
+
+func (r *PodmigrationReconciler) deleteSourcePod(ctx context.Context, pod *corev1.Pod, snapshotPathCurrent string) error {
+	if err := r.Delete(ctx, pod); err != nil {
+		return err
+	}
+	os.Chmod(snapshotPathCurrent, 0777)
+	if _, err := exec.Command("sudo", "rm", "-rf", snapshotPathCurrent).Output(); err != nil {
+		return err
+	}
+	if _, err := exec.Command("sudo", "rm", "-rf", "/var/lib/kubelet/migration/completed").Output(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *PodmigrationReconciler) SetupWithManager(mgr ctrl.Manager) error {
