@@ -198,6 +198,16 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		// If the snapshotPath have'nt set yet, it means multi-cluster pod migration
 		if annotations["snapshotPath"] == "" {
 			snapshotPath := path.Join("/var/lib/kubelet/migration/kkk", annotations["sourcePod"])
+			container := pod.Spec.Containers[0].Name
+			log.Info("", "live-migration pod", container)
+			for {
+				_, err := os.Stat(path.Join(snapshotPath, container, "descriptors.json"))
+				if os.IsNotExist(err) {
+					time.Sleep(100 * time.Millisecond)
+				} else {
+					break
+				}
+			}
 			newPod, err := r.restorePod(ctx, pod, annotations["sourcePod"], snapshotPath)
 			if err != nil {
 				log.Error(err, "unable to restore", "pod", annotations["sourcePod"])
@@ -414,6 +424,7 @@ func (r *PodmigrationReconciler) getSourcePodTemplate(ctx context.Context, sourc
 					Name:         container.Name,
 					Image:        container.Image,
 					Ports:        container.Ports,
+					Args:         container.Args,
 					VolumeMounts: container.VolumeMounts,
 				},
 			},

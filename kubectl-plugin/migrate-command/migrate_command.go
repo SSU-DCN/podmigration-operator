@@ -216,10 +216,11 @@ func (a *MigrateArgs) getSourcePodTemplate(sourcePodName, fromCluster string) co
 	container := pod.Spec.Containers[0]
 	automountServiceAccountToken := false
 	template := corev1.PodTemplateSpec{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   pod.ObjectMeta.Name,
-			Labels: pod.ObjectMeta.Labels,
-		},
+		// ObjectMeta: metav1.ObjectMeta{
+		// 	Name:   pod.ObjectMeta.Name,
+		// 	Labels: pod.ObjectMeta.Labels,
+		// },
+		ObjectMeta: pod.ObjectMeta,
 		Spec: corev1.PodSpec{
 			ServiceAccountName:           "default",
 			AutomountServiceAccountToken: &automountServiceAccountToken,
@@ -228,6 +229,7 @@ func (a *MigrateArgs) getSourcePodTemplate(sourcePodName, fromCluster string) co
 					Name:         container.Name,
 					Image:        container.Image,
 					Ports:        container.Ports,
+					Args:         container.Args,
 					VolumeMounts: container.VolumeMounts,
 				},
 			},

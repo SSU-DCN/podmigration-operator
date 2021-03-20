@@ -18,22 +18,31 @@ spec:
   # There are two ways create a checkpoint:
       # 1. Ref to podmigration-operator/config/samples/checkpoint-example/checkpoint_example.yaml to see how to checkpoint a running pod by given template
       # 2. Ref to podmigration-operator/tree/main/kubectl-plugin to see how to checkpoint a running pod by command #kubectl checkpoint 
-  snapshotPath: /var/lib/kubelet/migration/ctconf2020/simple
+  snapshotPath: /var/lib/kubelet/migration/ooo/video
   # sourcePod: simple
-  destHost: worker2
+  destHost: cluster1-worker1
   selector:
     podmig: dcn
   # When restore a number of pods from existing checkpoint infomation, a pre-template should be defined to pre-create a new pod first, then the checkpoint info will be loaded
   template:
     metadata:
-      name: simple
+      name: video
       labels:
-        name: simple
+        app: video
+      #annotations:
+        #snapshotPolicy: "checkpoint"
+        #snapshotPath: "/var/lib/kubelet/migration/abc"
     spec:
+      serviceAccountName: default
+      automountServiceAccountToken: false
       containers:
-      - name: count
-        image: alpine
+      - name: vlc
+        image: tuongvx/vlc-app:latest
         ports:
-        - containerPort: 80
+        - containerPort: 8080
           protocol: TCP
+        #args: ["big_buck_bunny.mp4","--loop","--sout", "#transcode{scodec=none}:http{mux=ffmpeg{mux=flv},dst=:8080/}"]
+        args: ["frozen.mp4","--loop","--sout", "#transcode{scodec=none}:http{mux=ffmpeg{mux=flv},dst=:8080/}"]
+      nodeSelector:
+        kubernetes.io/hostname: cluster1-worker1
  
