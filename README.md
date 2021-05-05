@@ -1,16 +1,9 @@
 # podmigration-operator
 ## The document to init K8s cluster, which enables Podmigration, can be found at: 
 - https://github.com/SSU-DCN/podmigration-operator/blob/main/init-cluster-containerd-CRIU.md
-## Kubebuilder init command
-```
-kubebuilder init --domain dcn.ssu.ac.kr
-```
-```
-kubebuilder create api --group podmig --version v1 --kind Podmigration
-```
 
 ## How to run:
-* To run Podmigration operator, which include CRD and custom controller:
+* To run Podmigration operator, which includes CRD and a custom controller:
 ```
 $ make manifests
 $ sudo snap install kustomize
@@ -18,16 +11,23 @@ $ sudo apt-get install gcc
 $ make install
 $ make run
 ```
-* To run api-server, which enable ```kubectl migrate``` command and GUI:
+* To run api-server, which enables ```kubectl migrate``` command and GUI:
 ```
 $ go run ./api-server/cmd/main.go
 ```
+* To install ```kubectl migrate/checkpoint``` command, follow the guide at https://github.com/SSU-DCN/podmigration-operator/tree/main/kubectl-plugin
 * To run GUI:
 ```
 $ cd podmigration-operator/gui
 $ npm install
 $ npm run serve
 ```
+### Demo video:
+1. Migrate video streaming pod from node to node in single cluster:
+ -  https://www.youtube.com/watch?v=M4Ik7aUKhas&t=1s&ab_channel=Xu%C3%A2nT%C6%B0%E1%BB%9DngV%C5%A9
+2. Migrate video streaming pod from cluster to cluster:
+ - https://drive.google.com/file/d/1AeyJZTRJcayBelvXf-CZwFapoquBpns1/view?usp=sharing
+
 ## Test live-migrate pod:
 * Run/check video-stream application:
 ```
@@ -35,11 +35,6 @@ $ cd podmigration-operator/config/samples/migration-example
 $ kubectl apply -f 2.yaml
 $ kubectl get pods
 ```
-### Demo video:
-1. Migrate video streaming pod from node to node in single cluster:
- -  https://www.youtube.com/watch?v=M4Ik7aUKhas&t=1s&ab_channel=Xu%C3%A2nT%C6%B0%E1%BB%9DngV%C5%A9
-2. Migrate video streaming pod from cluster to cluster:
- - https://drive.google.com/file/d/1AeyJZTRJcayBelvXf-CZwFapoquBpns1/view?usp=sharing
 #### There are three options to live-migrate a running Pod as following:
 1. Live-migrate video-stream application via api-server:
 ```
