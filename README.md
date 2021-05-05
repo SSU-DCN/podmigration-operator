@@ -35,6 +35,11 @@ $ cd podmigration-operator/config/samples/migration-example
 $ kubectl apply -f 2.yaml
 $ kubectl get pods
 ```
+### Demo video:
+1. Migrate video streaming pod from node to node in single cluster:
+ -  https://www.youtube.com/watch?v=M4Ik7aUKhas&t=1s&ab_channel=Xu%C3%A2nT%C6%B0%E1%BB%9DngV%C5%A9
+2. Migrate video streaming pod from cluster to cluster:
+ - https://drive.google.com/file/d/1AeyJZTRJcayBelvXf-CZwFapoquBpns1/view?usp=sharing
 #### There are three options to live-migrate a running Pod as following:
 1. Live-migrate video-stream application via api-server:
 ```
