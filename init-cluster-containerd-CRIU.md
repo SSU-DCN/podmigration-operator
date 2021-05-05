@@ -193,7 +193,32 @@ $ nano /etc/criu/runc.conf
 tcp-established
 tcp-close
 ```
-
+### Step9: Config NFS shared folder for every node in the cluster.
+- Config NFS server at Master node
+```
+$ sudo apt-get update
+$ sudo apt-get install nfs-kernel-server
+$ sudo nano /etc/exports
+/var/lib/kubelet/migration/  192.168.10.0/24(rw,sync,no_subtree_check)
+Note: 192.168.10.0/24 is subnetmask of every node in our cluster
+$ sudo exportfs -arvf
+$ sudo systemctl start nfs-kernel-server
+$ sudo systemctl enable nfs-kernel-server
+$ sudo systemctl status nfs-kernel-server
+$ sudo chmod 777 /var/lib/kubelet/migration
+```
+- Config NFS client at every worker nodes
+```
+$ sudo apt-get update
+$ sudo apt-get install nfs-common
+$ sudo nano /etc/fstab
+192.168.10.13:/var/lib/kubelet/migration   /var/lib/kubelet/migration  nfs  defaults,_netdev 0 0
+Note: 192.168.10.13 is the IP address of Nfs-server (master node) in this case.
+$ sudo umount /var/lib/kubelet/migration
+$ sudo mount -a
+$ sudo chmod 777 /var/lib/kubelet/migration
+```
+- Ref: https://github.com/vutuong/personal-notes/blob/master/configNFS.md
 
 
 
