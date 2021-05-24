@@ -165,6 +165,7 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		for {
 			status, _ := r.checkPodExist(ctx, newPod.Name, req.Namespace)
 			if status != nil {
+				log.Info("", "Live-migration", "Step 4.1 - Check whether if newPod is Running or not - completed"+status.Name+string(status.Status.Phase))
 				break
 			} else {
 				time.Sleep(200 * time.Millisecond)
@@ -172,13 +173,13 @@ func (r *PodmigrationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		}
 		log.Info("", "Live-migration", "Step 4.1 - Check whether if newPod is Running or not - completed")
 		// Step5: Clean checkpointpod process and checkpointPath
-		if err := r.removeCheckpointPod(ctx, sourcePod, "/var/lib/kubelet/migration/kkk", newPod.Name, req.Namespace); err != nil {
-			log.Error(err, "unable to remove checkpoint", "pod", sourcePod)
-			return ctrl.Result{}, err
-		}
-		log.Info("", "Live-migration", "Step 5 - Clean checkpointPod process and checkpointPath - completed")
+		// if err := r.removeCheckpointPod(ctx, sourcePod, "/var/lib/kubelet/migration/kkk", newPod.Name, req.Namespace); err != nil {
+		// 	log.Error(err, "unable to remove checkpoint", "pod", sourcePod)
+		// 	return ctrl.Result{}, err
+		// }
+		// log.Info("", "Live-migration", "Step 5 - Clean checkpointPod process and checkpointPath - completed")
 
-		// Step6: Delete source Pod
+		// // Step6: Delete source Pod
 		if err := r.deletePod(ctx, sourcePod); err != nil {
 			log.Error(err, "unable to delete", "source pod", sourcePod)
 			return ctrl.Result{}, err
