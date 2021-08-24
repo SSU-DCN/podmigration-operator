@@ -3,6 +3,7 @@
 - https://github.com/59nezytic/podmigration-operator/blob/patch-1/init-cluster-containerd-CRIU.md
 
 ## How to run:
+(Run this command at directory podmigration/)
 * To run Podmigration operator, which includes CRD and a custom controller:
 ```
 $ sudo snap install kustomize
