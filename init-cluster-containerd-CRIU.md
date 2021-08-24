@@ -160,7 +160,7 @@ Feb 04 05:55:21 tuong-worker1 kubelet[26650]: I0204 05:55:21.979185   26650 kube
 Feb 04 05:55:25 tuong-worker1 kubelet[26650]: I0204 05:55:25.979207   26650 kuberuntime_manager.go:841] Should we migrate?Runningfalse
 
 ```
-### Step7: You may need to change kubelet.config mode. (or not)
+### Step7: You may need to change kubelet.config mode. (Or not)
 ```
 $ sudo nano /var/lib/kubelet/config.yaml
 
@@ -216,6 +216,7 @@ $ sudo nano /etc/fstab
 Note: 192.168.10.13 is the IP address of Nfs-server (master node) in this case.
 $ sudo umount /var/lib/kubelet/migration
 $ sudo mount -a
+(If Mount Error occured, $ mount -t nfs -o nfsvers=3 <MASTER_NODE_IP>:/share /mnt)
 $ sudo chmod 777 /var/lib/kubelet/migration
 ```
 - Ref: https://github.com/vutuong/personal-notes/blob/master/configNFS.md
