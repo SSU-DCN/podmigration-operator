@@ -216,7 +216,7 @@ $ sudo nano /etc/fstab
 Note: 192.168.10.13 is the IP address of Nfs-server (master node) in this case.
 $ sudo umount /var/lib/kubelet/migration
 $ sudo mount -a
-(If Mount Error occured, mount -t nfs -o nfsvers=3 <MASTER_NODE_IP>:/share /mnt)
+(If Mount Error occured, $ mount -t nfs -o nfsvers=3 <MASTER_NODE_IP>:/share /mnt)
 $ sudo chmod 777 /var/lib/kubelet/migration
 ```
 - Ref: https://github.com/vutuong/personal-notes/blob/master/configNFS.md
