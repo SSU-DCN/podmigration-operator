@@ -1,6 +1,6 @@
 # podmigration-operator
 ## The document to init K8s cluster, which enables Podmigration, can be found at: 
-- https://github.com/SSU-DCN/podmigration-operator/blob/main/init-cluster-containerd-CRIU.md
+- https://github.com/59nezytic/podmigration-operator/blob/patch-1/init-cluster-containerd-CRIU.md
 
 ## How to run:
 * To run Podmigration operator, which includes CRD and a custom controller:
