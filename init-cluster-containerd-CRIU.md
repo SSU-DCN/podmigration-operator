@@ -110,14 +110,15 @@ $ sudo apt-get install kubeadm=1.19.0-00 kubelet=1.19.0-00 kubectl=1.19.0-00 -y
 $ whereis kubeadm
 $ whereis kubelet
 ```
-### Step5: Replace kubelet with the custom kubelet. There are two options:
-1. Build from source, download the custom source code and build, the source code can be found as followings
+### Step5: Replace kubelet with the custom kubelet.
+Download the custom source code and build at directory podmigration/, the source code can be found as followings
 ```
 $ git clone https://github.com/vutuong/kubernetes.git
 ```
 - The link ref for setting up environments: https://www.youtube.com/watch?v=Q91iZywBzew&t=3509s&ab_channel=CNCF%5BCloudNativeComputingFoundation%5D
 After all, run ```make```, and you can find the binaries somewhere in the directories: ```kubernetes/kubernetes/_output/local/bin```
-2. The kubelet and kubeadm binaries can be found in this folder.
+### Step6: Replace kubelet with the custom kubelet.
+The kubelet and kubeadm binaries can be found in this folder. (If you already download this file at Step1, just go to directory custom-binaries/
 ```
 $ git clone https://github.com/SSU-DCN/podmigration-operator.git
 $ cd podmigration-operator
@@ -132,15 +133,6 @@ $ sudo systemctl daemon-reload
 $ sudo systemctl restart kubelet
 $ sudo systemctl status kubelet
 ```
-### Step7: You may need to change kubelet.config mode.
-```
-$ sudo nano /var/lib/kubelet/config.yaml
-
-authorization:
-  #mode: Webhook
-  mode: AlwaysAllow
-```
-
 ### Step7: Init k8s-cluster. 
 - In the master node run following command:
 ```
@@ -167,6 +159,14 @@ Feb 04 05:55:16 tuong-worker1 kubelet[26650]: I0204 05:55:16.979326   26650 kube
 Feb 04 05:55:21 tuong-worker1 kubelet[26650]: I0204 05:55:21.979185   26650 kuberuntime_manager.go:841] Should we migrate?Runningfalse
 Feb 04 05:55:25 tuong-worker1 kubelet[26650]: I0204 05:55:25.979207   26650 kuberuntime_manager.go:841] Should we migrate?Runningfalse
 
+```
+### Step7: You may need to change kubelet.config mode. (or not)
+```
+$ sudo nano /var/lib/kubelet/config.yaml
+
+authorization:
+  #mode: Webhook
+  mode: AlwaysAllow
 ```
 ### Step8: Install CRIU.
 ```
