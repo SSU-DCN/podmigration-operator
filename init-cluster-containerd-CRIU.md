@@ -160,7 +160,7 @@ Feb 04 05:55:21 tuong-worker1 kubelet[26650]: I0204 05:55:21.979185   26650 kube
 Feb 04 05:55:25 tuong-worker1 kubelet[26650]: I0204 05:55:25.979207   26650 kuberuntime_manager.go:841] Should we migrate?Runningfalse
 
 ```
-### Step7: You may need to change kubelet.config mode. (or not)
+### Step7: You may need to change kubelet.config mode. (Or not)
 ```
 $ sudo nano /var/lib/kubelet/config.yaml
 
