@@ -5,9 +5,9 @@
 ## How to run:
 * To run Podmigration operator, which includes CRD and a custom controller:
 ```
-$ make manifests
 $ sudo snap install kustomize
 $ sudo apt-get install gcc
+$ make manifests
 $ make install
 $ make run
 ```
@@ -26,6 +26,7 @@ $ npm run serve
 1. Migrate video streaming pod from node to node in single cluster:
  -  https://www.youtube.com/watch?v=M4Ik7aUKhas&t=1s&ab_channel=Xu%C3%A2nT%C6%B0%E1%BB%9DngV%C5%A9
 2. Migrate video streaming pod from cluster to cluster:
+ -  https://www.youtube.com/watch?v=Bpdlgu0XZqo
  - https://drive.google.com/file/d/1AeyJZTRJcayBelvXf-CZwFapoquBpns1/view?usp=sharing
 
 ## Test live-migrate pod:
@@ -46,6 +47,7 @@ $ curl --request GET 'localhost:5000/Podmigrations'
 $ kubectl apply -f test2.yaml
 ```
 3. Live-migrate video-stream application via kubectl migrate command:
+- Note: As default, K8S doesn't have ```kubectl migrate``` and ```kubectl checkpoint``` command. To use this extended kubectl plugin please check the guide at https://github.com/SSU-DCN/podmigration-operator/tree/main/kubectl-plugin
 ```
 $ kubectl migrate video worker1
 ```
