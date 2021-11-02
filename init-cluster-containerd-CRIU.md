@@ -8,6 +8,7 @@
 - Download containerd and unpackage:
 ```
 $ sudo apt-get update
+$ sudo apt install gcc
 $ sudo snap install go --classic
 $ sudo apt install make
 $ wget https://github.com/containerd/containerd/releases/download/v1.3.6/containerd-1.3.6-linux-amd64.tar.gz
