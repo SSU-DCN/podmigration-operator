@@ -121,7 +121,7 @@ $ git clone https://github.com/vutuong/kubernetes.git
 
 After all, run ```make```, and you can find the binaries somewhere in the directories: ```kubernetes/kubernetes/_output/local/bin```
 ### Step6: Replace kubelet with the custom kubelet.
-The kubelet and kubeadm binaries can be found in this folder. (If you already download this file at Step1, just go to directory custom-binaries/
+The kubelet and kubeadm binaries can be found in this folder. (If you already download this file at Step1, just go to directory custom-binaries/)
 ```
 $ git clone https://github.com/SSU-DCN/podmigration-operator.git
 $ cd podmigration-operator
