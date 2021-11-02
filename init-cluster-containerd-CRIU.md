@@ -112,14 +112,16 @@ $ sudo apt-get install kubeadm=1.19.0-00 kubelet=1.19.0-00 kubectl=1.19.0-00 -y
 $ whereis kubeadm
 $ whereis kubelet
 ```
-### Step5: Replace kubelet with the custom kubelet.
+### Step5: Download the custom source code and build.
 Download the custom source code and build at directory podmigration-operator/, the source code can be found as followings
 ```
 $ git clone https://github.com/vutuong/kubernetes.git
+$ cd kubernetes
+$ make
 ```
+You can find the binaries somewhere in the directories: ```kubernetes/kubernetes/_output/local/bin```
 - The link ref for setting up environments: https://www.youtube.com/watch?v=Q91iZywBzew&t=3509s&ab_channel=CNCF%5BCloudNativeComputingFoundation%5D
 
-After all, run ```make```, and you can find the binaries somewhere in the directories: ```kubernetes/kubernetes/_output/local/bin```
 ### Step6: Replace kubelet with the custom kubelet.
 The kubelet and kubeadm binaries can be found in this folder. (If you already download this file at Step1, just go to directory custom-binaries/)
 ```
