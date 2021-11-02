@@ -8,6 +8,8 @@
 - Download containerd and unpackage:
 ```
 $ sudo apt-get update
+$ sudo snap install go --classic
+$ sudo apt install make
 $ wget https://github.com/containerd/containerd/releases/download/v1.3.6/containerd-1.3.6-linux-amd64.tar.gz
 $ mkdir containerd
 $ tar -xvf containerd-1.3.6-linux-amd64.tar.gz -C containerd
@@ -18,7 +20,6 @@ $ sudo mv containerd/bin/* /bin/
 ```
 $ git clone https://github.com/vutuong/containerd-cri.git
 $ cd containerd-cri/
-$ sudo snap install go --classic
 $ go version
 $ go get github.com/containerd/cri/cmd/containerd
 $ make
@@ -111,7 +112,7 @@ $ whereis kubeadm
 $ whereis kubelet
 ```
 ### Step5: Replace kubelet with the custom kubelet.
-Download the custom source code and build at directory podmigration/, the source code can be found as followings
+Download the custom source code and build at directory podmigration-operator/, the source code can be found as followings
 ```
 $ git clone https://github.com/vutuong/kubernetes.git
 ```
