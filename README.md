@@ -3,7 +3,7 @@
 - https://github.com/SSU-DCN/podmigration-operator/blob/main/init-cluster-containerd-CRIU.md
 
 ## How to run:
-(Run this command at directory podmigration/)
+(Run this command at directory podmigration-operator/)
 * To run Podmigration operator, which includes CRD and a custom controller:
 ```
 $ sudo snap install kustomize
