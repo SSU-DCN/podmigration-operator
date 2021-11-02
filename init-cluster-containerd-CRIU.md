@@ -116,8 +116,6 @@ $ whereis kubelet
 Download the custom source code and build at directory podmigration-operator/, the source code can be found as followings
 ```
 $ git clone https://github.com/vutuong/kubernetes.git
-$ cd kubernetes
-$ make
 ```
 You can find the binaries somewhere in the directories: ```kubernetes/kubernetes/_output/local/bin```
 - The link ref for setting up environments: https://www.youtube.com/watch?v=Q91iZywBzew&t=3509s&ab_channel=CNCF%5BCloudNativeComputingFoundation%5D
