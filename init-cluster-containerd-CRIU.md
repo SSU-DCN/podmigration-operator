@@ -9,12 +9,12 @@
 ```
 $ sudo apt-get update
 $ sudo apt-get install gcc
+
 $ mkdir tmp
 $ cd tmp/
 $ sudo wget https://golang.org/dl/go1.15.5.linux-amd64.tar.gz
 $ sudo tar -xzf go1.15.5.linux-amd64.tar.gz
 $ sudo mv go /usr/local
-
 $ sudo vi $HOME/.profile
 export GOROOT=/usr/local/go
 export GOPATH=$HOME/go
@@ -22,6 +22,7 @@ export GOBIN=$GOPATH/bin
 export PATH=$GOROOT/bin:$GOBIN:$PATH
 $ . ./.profile
 $ go version
+
 $ sudo apt install make
 $ wget https://github.com/containerd/containerd/releases/download/v1.3.6/containerd-1.3.6-linux-amd64.tar.gz
 $ mkdir containerd
