@@ -113,7 +113,7 @@ $ whereis kubeadm
 $ whereis kubelet
 ```
 ### Step5: Download the custom source code and build.
-Download the custom source code and build at directory podmigration-operator/, the source code can be found as followings
+Download the custom source code and build at directory containerd/, the source code can be found as followings
 ```
 $ git clone https://github.com/vutuong/kubernetes.git
 ```
