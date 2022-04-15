@@ -12,7 +12,7 @@ $ make manifests
 $ make install
 $ make run
 ```
-* To run api-server, which enables ```kubectl migrate``` command and GUI:(at podmigration-operator/ directory)
+* To run api-server, which enables ```kubectl migrate``` command and GUI: (at podmigration-operator/ directory)
 ```
 $ go run ./api-server/cmd/main.go
 ```
