@@ -24,6 +24,7 @@ $ source $HOME/.profile
 $ go version
 $ echo "export PATH=$PATH:/usr/local/go/bin" >> .bashrc
 $ source .bashrc
+$ sudo ln -s /usr/local/go/bin/go /usr/bin/go
 
 $ sudo apt install make
 $ wget https://github.com/containerd/containerd/releases/download/v1.3.6/containerd-1.3.6-linux-amd64.tar.gz
