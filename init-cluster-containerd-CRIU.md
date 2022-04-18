@@ -22,6 +22,8 @@ export GOBIN=$GOPATH/bin
 export PATH=$GOROOT/bin:$GOBIN:$PATH
 $ source $HOME/.profile
 $ go version
+$ echo "export PATH=$PATH:/usr/local/go/bin" >> .bashrc
+$ source .bashrc
 
 $ sudo apt install make
 $ wget https://github.com/containerd/containerd/releases/download/v1.3.6/containerd-1.3.6-linux-amd64.tar.gz
