@@ -20,7 +20,7 @@ export GOROOT=/usr/local/go
 export GOPATH=$HOME/go
 export GOBIN=$GOPATH/bin
 export PATH=$GOROOT/bin:$GOBIN:$PATH
-$ . ./.profile
+$ source $HOME/.profile
 $ go version
 
 $ sudo apt install make
