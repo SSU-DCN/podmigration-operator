@@ -125,17 +125,11 @@ $ sudo apt-get install kubeadm=1.19.0-00 kubelet=1.19.0-00 kubectl=1.19.0-00 -y
 $ whereis kubeadm
 $ whereis kubelet
 ```
-### Step5: Download the custom source code and build.
-Download the custom source code and build at directory containerd/, the source code can be found as followings
-```
-$ git clone https://github.com/vutuong/kubernetes.git
-```
-You can find the binaries somewhere in the directories: ```kubernetes/kubernetes/_output/local/bin```
-- The link ref for setting up environments: https://www.youtube.com/watch?v=Q91iZywBzew&t=3509s&ab_channel=CNCF%5BCloudNativeComputingFoundation%5D
 
-### Step6: Replace kubelet with the custom kubelet.
+### Step5 : Replace kubelet with the custom kubelet.
 The kubelet and kubeadm binaries can be found in this folder. (If you already download this file at Step1, just go to directory custom-binaries/)
 ```
+$ git clone https://github.com/vutuong/kubernetes.git
 $ git clone https://github.com/SSU-DCN/podmigration-operator.git
 $ cd podmigration-operator
 $ tar -vxf binaries.tar.bz2
@@ -149,7 +143,7 @@ $ sudo systemctl daemon-reload
 $ sudo systemctl restart kubelet
 $ sudo systemctl status kubelet
 ```
-### Step7: Init k8s-cluster. 
+### Step6: Init k8s-cluster. 
 - In the master node run following command:
 ```
 $ sudo kubeadm init --pod-network-cidr=10.244.0.0/16
@@ -236,6 +230,15 @@ $ sudo mount -a
 $ sudo chmod 777 /var/lib/kubelet/migration
 ```
 - Ref: https://github.com/vutuong/personal-notes/blob/master/configNFS.md
+- You should remake the demo as the video in youtube after finish all the step above without```Step5-Approach 2```.
+- Only if you don't need to use pre-build binaries of kubelet and kubeadm or you need to edit kubelet source code by your self and rebuild:
+  ### Step5- Approach 2:  Download the custom source code and build.
+  Download the custom source code and build at directory containerd/, the source code can be found as followings
+  ```
+  $ git clone https://github.com/vutuong/kubernetes.git
+  ```
+  You can find the binaries somewhere in the directories: ```kubernetes/kubernetes/_output/local/bin```
+  - The link ref for setting up environments and build the custom binaries: https://www.youtube.com/watch?v=Q91iZywBzew&t=3509s&ab_channel=CNCF%5BCloudNativeComputingFoundation%5D
 
 
 
